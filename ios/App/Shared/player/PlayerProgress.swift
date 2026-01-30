@@ -19,11 +19,11 @@ class PlayerProgress {
     
     // MARK: - SYNC HOOKS
     
-    public func syncFromPlayer(currentTime: Double, includesPlayProgress: Bool, isStopping: Bool) async {
+    public func syncFromPlayer(sessionId: String, currentTime: Double, includesPlayProgress: Bool, isStopping: Bool) async {
         let backgroundToken = await UIApplication.shared.beginBackgroundTask(withName: "ABS:syncFromPlayer")
         do {
-            let session = try updateLocalSessionFromPlayer(currentTime: currentTime, includesPlayProgress: includesPlayProgress)
-            try updateLocalMediaProgressFromLocalSession()
+            let session = try updateLocalSessionFromPlayer(sessionId: sessionId, currentTime: currentTime, includesPlayProgress: includesPlayProgress)
+            try updateLocalMediaProgressFromLocalSession(sessionId: sessionId)
             if let session = session {
                 try await updateServerSessionFromLocalSession(session, rateLimitSync: !isStopping)
             }
@@ -36,8 +36,8 @@ class PlayerProgress {
     
     // MARK: - SYNC LOGIC
     
-    private func updateLocalSessionFromPlayer(currentTime: Double, includesPlayProgress: Bool) throws -> PlaybackSession? {
-        guard let session = PlayerHandler.getPlaybackSession() else { return nil }
+    private func updateLocalSessionFromPlayer(sessionId: String, currentTime: Double, includesPlayProgress: Bool) throws -> PlaybackSession? {
+        guard let session = Database.shared.getPlaybackSession(id: sessionId) else { return nil }
         guard !currentTime.isNaN else { return nil } // Prevent bad data on player stop
         
         try session.update {
@@ -60,8 +60,8 @@ class PlayerProgress {
         return session.freeze()
     }
     
-    private func updateLocalMediaProgressFromLocalSession() throws {
-        guard let session = PlayerHandler.getPlaybackSession() else { return }
+    private func updateLocalMediaProgressFromLocalSession(sessionId: String) throws {
+        guard let session = Database.shared.getPlaybackSession(id: sessionId) else { return }
         guard session.isLocal else { return }
         
         let localMediaProgress = try LocalMediaProgress.fetchOrCreateLocalMediaProgress(localMediaProgressId: session.localMediaProgressId, localLibraryItemId: session.localLibraryItem?.id, localEpisodeId: session.episodeId)

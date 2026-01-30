@@ -9,6 +9,8 @@ import Foundation
 import RealmSwift
 
 class Store {
+    static let serverConfigDidChange = Notification.Name("Store.serverConfigDidChange")
+
     public static var serverConfig: ServerConnectionConfig? {
         get {
             do {
@@ -27,6 +29,7 @@ class Store {
             } else {
                 Database.shared.setLastActiveConfigIndexToNil()
             }
+            NotificationCenter.default.post(name: Store.serverConfigDidChange, object: nil)
         }
     }
     

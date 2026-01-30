@@ -1,6 +1,8 @@
 import UIKit
 import Capacitor
 import RealmSwift
+import AVFoundation
+import MediaPlayer
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -75,6 +77,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         )
         Realm.Configuration.defaultConfiguration = configuration
 
+        // Set audio session category early so the system registers this as an audio app.
+        // This is critical for CarPlay's CPNowPlayingTemplate to find the now playing origin.
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
+            // CRITICAL: Activate the audio session so iOS recognizes this app as an audio source
+            // CarPlay requires an active audio session to show the Now Playing screen
+            try AVAudioSession.sharedInstance().setActive(true, options: [])
+            debugPrint("AudioSession activated successfully for CarPlay")
+        } catch {
+            debugPrint("Failed to set AVAudioSession category/activate: \(error)")
+        }
+
+        // Register for remote control events at launch and keep them active for the app's lifetime.
+        // CarPlay requires this to be active before CPNowPlayingTemplate is pushed.
+        UIApplication.shared.beginReceivingRemoteControlEvents()
+
         return true
     }
 
@@ -123,6 +141,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         backgroundCompletionHandler = completionHandler
     }
 
+    // MARK: - Scene Configuration
+
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        if #available(iOS 14.0, *), connectingSceneSession.role == .carTemplateApplication {
+            let config = UISceneConfiguration(name: "CarPlay Configuration", sessionRole: connectingSceneSession.role)
+            config.delegateClass = CarPlaySceneDelegate.self
+            return config
+        }
+
+        let config = UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+        config.delegateClass = SceneDelegate.self
+        config.storyboard = UIStoryboard(name: "Main", bundle: nil)
+        return config
+    }
 
 }
 

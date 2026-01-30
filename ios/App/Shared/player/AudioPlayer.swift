@@ -29,13 +29,13 @@ class AudioPlayer: NSObject {
 
     private var status: PlayerStatus
     internal var rateManager: AudioPlayerRateManager
-    
+
     private var playerContext = 0
     private var playerItemContext = 0
-    
+
     internal var playWhenReady: Bool
     private var initialPlaybackRate: Float
-    
+
     internal var audioPlayer: AVQueuePlayer
     private var sessionId: String
 
@@ -43,15 +43,19 @@ class AudioPlayer: NSObject {
     private var sleepTimerObserverToken: Any?
     private var queueObserver:NSKeyValueObservation?
     private var queueItemStatusObserver:NSKeyValueObservation?
-    
+
     private var isRebuildingQueue = false
-    
+
+    // MPNowPlayingSession binds this player to the system now-playing source (iOS 16+).
+    // Without this, CPNowPlayingTemplate may not display metadata from our info center.
+    private var nowPlayingSession: Any?
+
     // Sleep timer values
     internal var sleepTimeChapterStopAt: Double?
     internal var sleepTimeChapterToken: Any?
     internal var sleepTimer: Timer?
     internal var sleepTimeRemaining: Double?
-    
+
     internal var currentTrackIndex = 0
     private var allPlayerItems:[AVPlayerItem] = []
     
@@ -71,10 +75,20 @@ class AudioPlayer: NSObject {
         }
         
         super.init()
-        
+
+        // Create MPNowPlayingSession to explicitly bind this player as the
+        // system's now-playing source. This is required for CPNowPlayingTemplate
+        // to display metadata on iOS 16+.
+        if #available(iOS 16.0, *) {
+            let session = MPNowPlayingSession(players: [self.audioPlayer])
+            self.nowPlayingSession = session
+            NSLog("[CARPLAY-DEBUG] MPNowPlayingSession created, configuring info center")
+            NowPlayingInfo.shared.setInfoCenter(session.nowPlayingInfoCenter)
+        }
+
         self.rateManager.rateChangedCompletion = self.updateNowPlaying
         self.rateManager.defaultRateChangedCompletion = self.setupTimeObservers
-        
+
         initAudioSession()
         setupRemoteTransportControls()
         
@@ -135,30 +149,37 @@ class AudioPlayer: NSObject {
         self.queueItemStatusObserver?.invalidate()
     }
     
-    public func destroy() {
+    public func destroy(keepAudioSessionActive: Bool = false) {
         // Pause is not synchronous causing this error on below lines:
         // AVAudioSession_iOS.mm:1206  Deactivating an audio session that has running I/O. All I/O should be stopped or paused prior to deactivating the audio session
         // It is related to L79 `AVAudioSession.sharedInstance().setActive(false)`
         self.pause()
         self.audioPlayer.replaceCurrentItem(with: nil)
-        
-        do {
-            try AVAudioSession.sharedInstance().setActive(false)
-        } catch {
-            AbsLogger.error(message: "Failed to set AVAudioSession inactive", error: error)
+
+        // Only deactivate the audio session if we're not immediately starting new playback
+        // This prevents CarPlay from losing the now-playing origin during player transitions
+        if !keepAudioSessionActive {
+            do {
+                try AVAudioSession.sharedInstance().setActive(false)
+                AbsLogger.info(message: "AudioPlayer: Audio session deactivated")
+            } catch {
+                AbsLogger.error(message: "Failed to set AVAudioSession inactive", error: error)
+            }
+        } else {
+            AbsLogger.info(message: "AudioPlayer: Keeping audio session active for player transition")
         }
-        
+
         self.removeAudioSessionNotifications()
-        DispatchQueue.runOnMainQueue {
-            UIApplication.shared.endReceivingRemoteControlEvents()
-        }
-        
+        // Note: We intentionally do NOT call endReceivingRemoteControlEvents() here.
+        // The app should remain registered as a remote control receiver for its entire lifetime
+        // so that CarPlay's CPNowPlayingTemplate can always find the now playing origin.
+
         // Remove observers
         self.audioPlayer.removeObserver(self, forKeyPath: #keyPath(AVPlayer.currentItem), context: &playerContext)
         self.removeTimeObservers()
-        
+
         NotificationCenter.default.post(name: NSNotification.Name(PlayerEvents.closed.rawValue), object: nil)
-        
+
         // Remove timers
         self.removeSleepTimer()
     }
@@ -166,7 +187,7 @@ class AudioPlayer: NSObject {
     public func isInitialized() -> Bool {
         return self.status != .uninitialized
     }
-    
+
     public func getPlaybackSession() -> PlaybackSession? {
         return Database.shared.getPlaybackSession(id: self.sessionId)
     }
@@ -213,9 +234,10 @@ class AudioPlayer: NSObject {
                 guard let currentTime = self.getCurrentTime() else { return }
                 let isPlaying = self.isPlaying()
                 
+                let sessionId = self.sessionId
                 Task {
                     // Let the player update the current playback positions
-                    await PlayerProgress.shared.syncFromPlayer(currentTime: currentTime, includesPlayProgress: isPlaying, isStopping: false)
+                    await PlayerProgress.shared.syncFromPlayer(sessionId: sessionId, currentTime: currentTime, includesPlayProgress: isPlaying, isStopping: false)
                 }
             }
             // Update the sleep timer every second
@@ -315,7 +337,8 @@ class AudioPlayer: NSObject {
         let currentTime = allowSeekBack ? PlayerTimeUtils.calcSeekBackTime(currentTime: session.currentTime, lastPlayedMs: session.updatedAt) : session.currentTime
         
         // Sync our new playback position
-        Task { await PlayerProgress.shared.syncFromPlayer(currentTime: currentTime, includesPlayProgress: self.isPlaying(), isStopping: false) }
+        let sessionId = self.sessionId
+        Task { await PlayerProgress.shared.syncFromPlayer(sessionId: sessionId, currentTime: currentTime, includesPlayProgress: self.isPlaying(), isStopping: false) }
 
         // Start playback, with a seek, for as smooth a scrub bar start as possible
         let currentTrackStartOffset = session.audioTracks[self.currentTrackIndex].startOffset ?? 0.0
@@ -330,8 +353,9 @@ class AudioPlayer: NSObject {
     }
     
     private func resumePlayback() {
+        NSLog("[CARPLAY-DEBUG] resumePlayback called")
         AbsLogger.info(message:"PLAY: Resuming playback")
-        
+
         self.markAudioSessionAs(active: true)
         DispatchQueue.runOnMainQueue {
             self.audioPlayer.play()
@@ -339,9 +363,17 @@ class AudioPlayer: NSObject {
         }
         self.status = .playing
 
+        // Activate the MPNowPlayingSession so the system knows this player
+        // is the active now-playing source (needed for CPNowPlayingTemplate).
+        if #available(iOS 16.0, *), let session = self.nowPlayingSession as? MPNowPlayingSession {
+            session.becomeActiveIfPossible { success in
+                NSLog("[CARPLAY-DEBUG] MPNowPlayingSession.becomeActiveIfPossible: \(success)")
+            }
+        }
+
         // Update the progress
         self.updateNowPlaying()
-        
+
         // Handle a chapter sleep timer that may now be invalid
         self.handleTrackChangeForChapterSleepTimer()
     }
@@ -355,9 +387,10 @@ class AudioPlayer: NSObject {
         }
         self.markAudioSessionAs(active: false)
         
+        let sessionId = self.sessionId
         Task {
             if let currentTime = self.getCurrentTime() {
-                await PlayerProgress.shared.syncFromPlayer(currentTime: currentTime, includesPlayProgress: self.isPlaying(), isStopping: true)
+                await PlayerProgress.shared.syncFromPlayer(sessionId: sessionId, currentTime: currentTime, includesPlayProgress: self.isPlaying(), isStopping: true)
             }
         }
         
@@ -591,6 +624,7 @@ class AudioPlayer: NSObject {
     private func initAudioSession() {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+            try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             AbsLogger.error(message: "Failed to set AVAudioSession category", error: error)
         }
@@ -670,7 +704,13 @@ class AudioPlayer: NSObject {
         DispatchQueue.runOnMainQueue {
             UIApplication.shared.beginReceivingRemoteControlEvents()
         }
-        let commandCenter = MPRemoteCommandCenter.shared()
+        let commandCenter: MPRemoteCommandCenter
+        if #available(iOS 16.0, *), let session = nowPlayingSession as? MPNowPlayingSession {
+            commandCenter = session.remoteCommandCenter
+            NSLog("[CARPLAY-DEBUG] Using MPNowPlayingSession command center")
+        } else {
+            commandCenter = MPRemoteCommandCenter.shared()
+        }
         let deviceSettings = Database.shared.getDeviceSettings()
         let jumpForwardTime = deviceSettings.jumpForwardTime
         let jumpBackwardsTime = deviceSettings.jumpBackwardsTime
@@ -679,11 +719,7 @@ class AudioPlayer: NSObject {
         commandCenter.playCommand.removeTarget(nil)
         commandCenter.playCommand.addTarget { [weak self] event in
             guard let strongSelf = self else { return .commandFailed }
-            if strongSelf.isPlaying() {
-                strongSelf.pause()
-            } else {
-                strongSelf.play(allowSeekBack: true)
-            }
+            strongSelf.play(allowSeekBack: true)
             return .success
         }
 
@@ -691,11 +727,7 @@ class AudioPlayer: NSObject {
         commandCenter.pauseCommand.removeTarget(nil)
         commandCenter.pauseCommand.addTarget { [weak self] event in
             guard let strongSelf = self else { return .commandFailed }
-            if strongSelf.isPlaying() {
-                strongSelf.pause()
-            } else {
-                strongSelf.play(allowSeekBack: true)
-            }
+            strongSelf.pause()
             return .success
         }
 
@@ -788,6 +820,11 @@ class AudioPlayer: NSObject {
         }
     }
     private func updateNowPlaying() {
+        // Don't push now-playing updates until the player has actually started.
+        // The periodic time observer fires immediately during init() with rate=0,
+        // which would overwrite the metadata set by setSessionMetadata().
+        guard self.isInitialized() else { return }
+
         NotificationCenter.default.post(name: NSNotification.Name(PlayerEvents.update.rawValue), object: nil)
         if let session = self.getPlaybackSession(), let currentChapter = session.getCurrentChapter(), PlayerSettings.main().chapterTrack {
             NowPlayingInfo.shared.update(
