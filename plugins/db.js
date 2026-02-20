@@ -132,13 +132,19 @@ export default ({ app, store }, inject) => {
     store.commit('user/setAccessToken', data.accessToken)
   })
 
-  // Listen for token refresh failure events from native app
+  // Listen for token refresh failure events from native app.
+  // Note: the native side currently no longer sends this event (to avoid
+  // cascading CarPlay failures into the phone app), but we keep the handler
+  // as a safety net. We do NOT call store.dispatch('user/logout') because
+  // that triggers AbsDatabase.logout() which clears the persisted server
+  // config and breaks auto-login. Instead we just clear in-memory state.
   AbsDatabase.addListener('onTokenRefreshFailure', async (data) => {
     console.log('[db] onTokenRefreshFailure', data)
-    // Clear store and redirect to login page
-    await store.dispatch('user/logout')
+    // Clear in-memory Vuex state only — preserve the server config in Realm
+    store.commit('user/logout')
+    store.commit('libraries/setCurrentLibrary', null, { root: true })
     if (window.location.pathname !== '/connect') {
-      window.location.href = '/connect?error=refreshTokenFailed&serverConnectionConfigId=' + data.serverConnectionConfigId || ''
+      window.location.href = '/connect?error=refreshTokenFailed&serverConnectionConfigId=' + (data.serverConnectionConfigId || '')
     }
   })
 }

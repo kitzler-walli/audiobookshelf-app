@@ -12,9 +12,23 @@ class ApiClient {
     private static let secureStorage = SecureStorage()
     
     public static func getData(from url: URL, completion: @escaping (UIImage?) -> Void) {
-        URLSession.shared.dataTask(with: url, completionHandler: {(data, response, error) in
+        var request = URLRequest(url: url)
+
+        // Add auth header so cover art works behind reverse proxies
+        if let token = Store.serverConfig?.token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        URLSession.shared.dataTask(with: request, completionHandler: {(data, response, error) in
+            if let error = error {
+                AbsLogger.error(message: "getData: request to \(url) failed: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
             if let data = data {
-                completion(UIImage(data:data))
+                completion(UIImage(data: data))
+            } else {
+                completion(nil)
             }
         }).resume()
     }
@@ -168,8 +182,9 @@ class ApiClient {
         
         // Get refresh token from secure storage
         guard let refreshToken = secureStorage.getRefreshToken(serverConnectionConfigId: serverConfig.id) else {
-            AbsLogger.error(message: "handleTokenRefresh: No refresh token available for server \(serverConfig.name)")
-            handleRefreshFailure()
+            // No refresh token stored — server likely doesn't use refresh tokens.
+            // Just return nil without clearing the server config so the app stays connected.
+            AbsLogger.info(message: "handleTokenRefresh: No refresh token available for server \(serverConfig.name), skipping refresh")
             callback?(nil)
             return
         }
@@ -274,57 +289,39 @@ class ApiClient {
             return
         }
         
-        // Handle the response
-        retryRequest.response { response in
-            if let statusCode = response.response?.statusCode, (200...299).contains(statusCode) {
-                // Check if response has data
-                if let data = response.data, !data.isEmpty {
-                    // If it is a string return nil (e.g. express returns OK for 200 status codes)
-                    if let responseString = String(data: data, encoding: .utf8) {
-                        AbsLogger.info(message: "retryOriginalRequest: Got string response '\(responseString)'")
-                        callback?(nil)
-                        return
-                    }
-                    
-                    // If not a string, try JSON
-                    do {
-                        let decodedObject = try JSONDecoder().decode(decodable, from: data)
-                        callback?(decodedObject)
-                    } catch {
-                        AbsLogger.error(message: "retryOriginalRequest: JSON decode failed: \(error)", error: error)
-                        callback?(nil)
-                    }
+        // Handle the response — try JSON decoding first, fall back to plain-text check
+        retryRequest.responseDecodable(of: decodable) { response in
+            switch response.result {
+            case .success(let obj):
+                AbsLogger.info(message: "retryOriginalRequest: Successfully decoded response for \(endpoint)")
+                callback?(obj)
+            case .failure(let error):
+                let statusCode = response.response?.statusCode ?? 0
+                if (200...299).contains(statusCode) {
+                    // Success status but couldn't decode — likely a plain-text response (e.g. "OK")
+                    AbsLogger.info(message: "retryOriginalRequest: Status \(statusCode) but decode failed (plain-text response?): \(error)")
+                    callback?(nil)
                 } else {
-                    // Empty response
-                    AbsLogger.info(message: "retryOriginalRequest: Empty response with success status \(statusCode)")
+                    AbsLogger.error(message: "retryOriginalRequest: Request failed with status \(statusCode): \(error)")
                     callback?(nil)
                 }
-            } else {
-                AbsLogger.error(message: "retryOriginalRequest: Request failed with status \(response.response?.statusCode ?? 0)")
-                callback?(nil)
             }
         }
     }
     
     /**
-     * Handles the case when token refresh fails
-     * This will clear the current server connection and notify webview
+     * Handles the case when token refresh fails on the native (Swift) side.
+     * This is called from CarPlay API requests — it must NOT cascade to the
+     * webview or clear server config, because that would destroy the phone
+     * app's login state.  The webview has its own token refresh handling
+     * (nativeHttp.js) which will deal with 401s when it makes its own requests.
+     *
+     * We also keep the refresh token in secure storage because the failure may
+     * be transient (network blip, server restart).  If the token is genuinely
+     * expired the next refresh attempt will fail again harmlessly.
      */
     private static func handleRefreshFailure() {
-        AbsLogger.info(message: "handleRefreshFailure: Token refresh failed, clearing session")
-        
-        // Clear the current server connection
-        Store.serverConfig = nil
-        
-        // Remove refresh token from secure storage
-        if let serverConfig = Store.serverConfig {
-            _ = secureStorage.removeRefreshToken(serverConnectionConfigId: serverConfig.id)
-        }
-        
-        // Notify webview frontend about token refresh failure
-        if let callback = AbsDatabase.tokenRefreshCallback {
-            callback("onTokenRefreshFailure", ["error": "Token refresh failed"])
-        }
+        AbsLogger.info(message: "handleRefreshFailure: Token refresh failed — keeping refresh token and NOT notifying webview")
     }
     
     // MARK: - Enhanced API Methods with Token Refresh
@@ -640,9 +637,10 @@ class ApiClient {
         }
     }
 
-    public static func getItemsInProgress(callback: @escaping ([ItemInProgress]) -> Void) {
+    /// Returns nil when the API call fails, empty array when there are genuinely no items.
+    public static func getItemsInProgress(callback: @escaping ([ItemInProgress]?) -> Void) {
         getResourceWithTokenRefresh(endpoint: "api/me/items-in-progress", decodable: ItemsInProgressResponse.self) { response in
-            callback(response?.libraryItems ?? [])
+            callback(response?.libraryItems)
         }
     }
 

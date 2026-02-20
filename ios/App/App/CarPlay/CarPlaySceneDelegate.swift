@@ -20,6 +20,9 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     private var downloadsProvider: CarPlayDownloadsProvider?
     private var coldStartRetryCount = 0
     private let maxColdStartRetries = 10
+    private var dataLoadRetryCount = 0
+    private let maxDataLoadRetries = 5
+    private var hasAttemptedMidSessionRestore = false  // kept for cold-start edge case
 
     // MARK: - CPTemplateApplicationSceneDelegate
 
@@ -29,6 +32,13 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     ) {
         CarPlaySceneDelegate.shared = self
         self.interfaceController = interfaceController
+
+        // Register observer FIRST so we never miss serverConfigDidChange notifications
+        NotificationCenter.default.addObserver(self, selector: #selector(reloadAllProviders), name: Store.serverConfigDidChange, object: nil)
+
+        // Restore server config from Realm before initial reload.
+        // On cold start the active config index may be nil even though configs exist.
+        restoreServerConfigIfNeeded()
 
         let continueProvider = CarPlayContinueListeningProvider(interfaceController: interfaceController)
         let libProvider = CarPlayLibraryProvider(interfaceController: interfaceController)
@@ -57,12 +67,14 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         libProvider.reload()
         dlProvider.reload()
 
-        // On cold start, serverConfig may not be ready yet. Schedule retries.
-        scheduleColdStartRetryIfNeeded()
+        // If config still not available (Realm not ready yet), schedule async retries
+        if Store.serverConfig == nil {
+            scheduleColdStartRetryIfNeeded()
+        } else {
+            scheduleDataLoadRetryIfNeeded()
+        }
 
-        NotificationCenter.default.addObserver(self, selector: #selector(reloadAllProviders), name: Store.serverConfigDidChange, object: nil)
-
-        NSLog("[CARPLAY-DEBUG] CarPlay scene didConnect")
+        NSLog("[CARPLAY-DEBUG] CarPlay scene didConnect, serverConfig=\(Store.serverConfig != nil ? "available" : "nil")")
 
         // If there's active playback when CarPlay connects, show Now Playing
         if PlayerHandler.getPlaybackSession() != nil, !PlayerHandler.paused {
@@ -88,18 +100,53 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 
     @objc private func reloadAllProviders() {
         DispatchQueue.main.async { [weak self] in
-            self?.continueListeningProvider?.reload()
-            self?.libraryProvider?.reload()
-            self?.downloadsProvider?.reload()
+            guard let self = self else { return }
+
+            // If config was cleared mid-session (e.g. by a token refresh failure)
+            // but configs still exist in Realm, try to restore once to avoid
+            // showing "Not Connected" when the stored token is actually valid.
+            if Store.serverConfig == nil, !self.hasAttemptedMidSessionRestore {
+                self.hasAttemptedMidSessionRestore = true
+                self.restoreServerConfigIfNeeded()
+                // restoreServerConfigIfNeeded posts serverConfigDidChange which
+                // will call reloadAllProviders again — skip this invocation.
+                if Store.serverConfig != nil { return }
+            }
+
+            self.continueListeningProvider?.reload()
+            self.libraryProvider?.reload()
+            self.downloadsProvider?.reload()
         }
     }
 
-    /// On cold start, Realm/serverConfig may not be ready immediately.
-    /// Retry loading until config is available or max retries reached.
+    /// Synchronously restore server config from Realm if the active config index
+    /// was cleared (e.g. by a previous token refresh failure) but configs still exist.
+    /// Called before the initial provider reload so CarPlay can connect autonomously.
+    private func restoreServerConfigIfNeeded() {
+        guard Store.serverConfig == nil else {
+            NSLog("[CARPLAY-DEBUG] restoreServerConfig: config already available")
+            return
+        }
+
+        let configs = Database.shared.getServerConnectionConfigs()
+        if configs.count == 1 {
+            NSLog("[CARPLAY-DEBUG] restoreServerConfig: restoring single available server config")
+            Store.serverConfig = configs[0]
+        } else if !configs.isEmpty {
+            NSLog("[CARPLAY-DEBUG] restoreServerConfig: restoring first of \(configs.count) server configs")
+            Store.serverConfig = configs[0]
+        } else {
+            NSLog("[CARPLAY-DEBUG] restoreServerConfig: no configs in Realm")
+        }
+    }
+
+    /// On cold start, Realm may not be ready immediately.
+    /// Retry until config is available or max retries reached.
     private func scheduleColdStartRetryIfNeeded() {
         guard Store.serverConfig == nil, coldStartRetryCount < maxColdStartRetries else {
             if Store.serverConfig != nil {
                 NSLog("[CARPLAY-DEBUG] Cold start: serverConfig available")
+                scheduleDataLoadRetryIfNeeded()
             }
             return
         }
@@ -110,13 +157,30 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self = self else { return }
+            self.restoreServerConfigIfNeeded()
 
             if Store.serverConfig != nil {
                 NSLog("[CARPLAY-DEBUG] Cold start retry \(self.coldStartRetryCount): serverConfig now available, reloading")
                 self.reloadAllProviders()
+                self.scheduleDataLoadRetryIfNeeded()
             } else {
                 self.scheduleColdStartRetryIfNeeded()
             }
+        }
+    }
+
+    /// Retry loading data if initial API calls fail (e.g., network not ready yet).
+    private func scheduleDataLoadRetryIfNeeded() {
+        guard dataLoadRetryCount < maxDataLoadRetries else { return }
+
+        dataLoadRetryCount += 1
+        let delay = Double(dataLoadRetryCount) * 2.0  // 2s, 4s, 6s, 8s, 10s
+        NSLog("[CARPLAY-DEBUG] Scheduling data load retry \(dataLoadRetryCount)/\(maxDataLoadRetries) in \(delay)s")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self, Store.serverConfig != nil else { return }
+            NSLog("[CARPLAY-DEBUG] Data load retry \(self.dataLoadRetryCount): reloading providers")
+            self.reloadAllProviders()
         }
     }
 

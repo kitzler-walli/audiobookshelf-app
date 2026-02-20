@@ -31,12 +31,12 @@ class CarPlayContinueListeningProvider {
         }
 
         let group = DispatchGroup()
-        var fetchedItems: [ItemInProgress] = []
+        var fetchedItems: [ItemInProgress]?  // nil means API call failed
         var fetchedProgress: [MediaProgress] = []
 
         group.enter()
         ApiClient.getItemsInProgress { items in
-            fetchedItems = items
+            fetchedItems = items  // empty array = success but no items; populated = success with items
             group.leave()
         }
 
@@ -51,7 +51,17 @@ class CarPlayContinueListeningProvider {
         }
     }
 
-    private func updateTemplate(with items: [ItemInProgress], progressList: [MediaProgress]) {
+    private func updateTemplate(with items: [ItemInProgress]?, progressList: [MediaProgress]) {
+        guard let items = items else {
+            // API call failed (nil) — don't overwrite existing items if we have them
+            if template.sections.isEmpty {
+                template.emptyViewTitleVariants = ["Unable to Load"]
+                template.emptyViewSubtitleVariants = ["Check connection and try again"]
+            }
+            NSLog("[CARPLAY-DEBUG] ContinueListening: API returned nil, keeping existing data")
+            return
+        }
+
         if items.isEmpty {
             template.updateSections([])
             template.emptyViewTitleVariants = ["Nothing in Progress"]

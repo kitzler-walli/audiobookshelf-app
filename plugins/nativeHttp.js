@@ -203,25 +203,31 @@ export default function ({ store, $db, $socket }, inject) {
     },
 
     /**
-     * Handles the case when token refresh fails
+     * Handles the case when token refresh fails.
+     * Does NOT call store.dispatch('user/logout') because that triggers
+     * AbsDatabase.logout() which clears Store.serverConfig and the last
+     * active config index — breaking auto-login on next app open.
+     * Instead we only clear the in-memory Vuex state and redirect.
+     * The server connection config stays in Realm so the connect page
+     * can still show it and auto-login can retry next time.
+     *
      * @param {string} [serverConnectionConfigId]
-     * @returns {Promise} - Promise that resolves when logout is complete
+     * @returns {Promise}
      */
     async handleRefreshFailure(serverConnectionConfigId) {
       try {
-        console.log('[nativeHttp] Handling refresh failure - logging out user')
+        console.log('[nativeHttp] Handling refresh failure - clearing user state (preserving server config)')
 
-        // Clear store
-        await store.dispatch('user/logout')
+        // Clear in-memory state only (do NOT call dispatch('user/logout') which
+        // would call AbsDatabase.logout() and destroy the persisted server config)
+        store.commit('user/logout')
+        store.commit('libraries/setCurrentLibrary', null, { root: true })
+        $socket.logout()
 
-        if (serverConnectionConfigId) {
-          // Clear refresh token for server connection config
-          await $db.clearRefreshToken(serverConnectionConfigId)
-        }
-
-        // Redirect to login page
+        // Redirect to login page with server config ID so the connect form
+        // can auto-select the right server for re-authentication
         if (window.location.pathname !== '/connect') {
-          window.location.href = '/connect?error=refreshTokenFailed&serverConnectionConfigId=' + serverConnectionConfigId
+          window.location.href = '/connect?error=refreshTokenFailed&serverConnectionConfigId=' + (serverConnectionConfigId || '')
         }
       } catch (error) {
         console.error('[nativeHttp] Failed to handle refresh failure:', error)
