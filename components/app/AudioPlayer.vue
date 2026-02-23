@@ -565,6 +565,7 @@ export default {
 
       if (this.seekLoading) {
         this.seekLoading = false
+        clearTimeout(this.seekLoadingTimeout)
         if (this.$refs.playedTrack) {
           this.$refs.playedTrack.classList.remove('bg-yellow-300')
           this.$refs.playedTrack.classList.add('bg-gray-200')
@@ -615,7 +616,16 @@ export default {
       this.seekedTime = time
       this.seekLoading = true
 
-      AbsAudioPlayer.seek({ value: Math.floor(time) })
+      // Safety timeout: clear seekLoading if metadata never arrives (e.g. during track switch)
+      clearTimeout(this.seekLoadingTimeout)
+      this.seekLoadingTimeout = setTimeout(() => {
+        if (this.seekLoading) {
+          console.warn('[AudioPlayer] Seek loading timeout - clearing flag')
+          this.seekLoading = false
+        }
+      }, 5000)
+
+      AbsAudioPlayer.seek({ value: time })
 
       if (this.$refs.playedTrack) {
         const perc = time / this.totalDuration

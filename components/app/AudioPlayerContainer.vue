@@ -221,13 +221,45 @@ export default {
         }
       }
 
-      // if already playing this item then jump to start time
+      // if already playing this item then check server for newer progress before resuming
       if (this.$store.getters['getIsMediaStreaming'](libraryItemId, episodeId)) {
         console.log('Already streaming item', startTime)
         if (startTime !== undefined && startTime !== null) {
-          // seek to start time
-          AbsAudioPlayer.seek({ value: Math.floor(startTime) })
-        } else if (this.$refs.audioPlayer) {
+          // Explicit start time requested (e.g. from bookmark) — seek directly
+          AbsAudioPlayer.seek({ value: startTime })
+          this.$store.commit('setPlayerDoneStartingPlayback')
+          return
+        }
+
+        // Check if server has newer progress before resuming from local position
+        if (!isLocal) {
+          const progressUrl = episodeId ? `/api/me/progress/${libraryItemId}/${episodeId}` : `/api/me/progress/${libraryItemId}`
+          this.$nativeHttp
+            .get(progressUrl)
+            .then((serverProgress) => {
+              if (!serverProgress || !serverProgress.lastUpdate) {
+                this.$refs.audioPlayer?.play()
+                return
+              }
+              const session = this.$store.state.currentPlaybackSession
+              const sessionUpdatedAt = session?.updatedAt || 0
+              if (serverProgress.lastUpdate > sessionUpdatedAt && serverProgress.currentTime !== this.currentTime) {
+                console.log(`[AudioPlayerContainer] Server has newer progress (server=${serverProgress.currentTime}, local=${this.currentTime}), seeking`)
+                AbsAudioPlayer.seek({ value: serverProgress.currentTime })
+              }
+              this.$refs.audioPlayer?.play()
+            })
+            .catch((error) => {
+              console.error('[AudioPlayerContainer] Failed to check server progress before resume, playing anyway', error)
+              this.$refs.audioPlayer?.play()
+            })
+            .finally(() => {
+              this.$store.commit('setPlayerDoneStartingPlayback')
+            })
+          return
+        }
+
+        if (this.$refs.audioPlayer) {
           this.$refs.audioPlayer.play()
         }
         this.$store.commit('setPlayerDoneStartingPlayback')
@@ -338,7 +370,16 @@ export default {
               .get(url)
               .then((data) => {
                 if (!this.$refs.audioPlayer?.isPlaying && data.libraryItemId === libraryItemId) {
-                  console.log('[AudioPlayerContainer] device visibility: got server media progress', data.currentTime, 'last time in player is', this.currentTime)
+                  const sessionUpdatedAt = playbackSession.updatedAt || 0
+                  const serverIsNewer = data.lastUpdate && data.lastUpdate > sessionUpdatedAt
+                  const positionDiffers = Math.abs(data.currentTime - this.currentTime) > 1
+                  console.log(`[AudioPlayerContainer] device visibility: server progress=${data.currentTime} (lastUpdate=${data.lastUpdate}), local=${this.currentTime} (updatedAt=${sessionUpdatedAt})`)
+                  if (serverIsNewer && positionDiffers) {
+                    // Seek the native player so the session's currentTime is updated,
+                    // not just the UI — prevents stale position from being synced back
+                    console.log('[AudioPlayerContainer] device visibility: server has newer progress, seeking native player')
+                    AbsAudioPlayer.seek({ value: data.currentTime })
+                  }
                   this.$refs.audioPlayer.currentTime = data.currentTime
                   this.$refs.audioPlayer.timeupdate()
                 }

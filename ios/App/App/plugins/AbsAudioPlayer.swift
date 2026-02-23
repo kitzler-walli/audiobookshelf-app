@@ -95,17 +95,38 @@ public class AbsAudioPlayer: CAPPlugin, CAPBridgedPlugin {
                 return call.resolve([:])
             }
 
-            do {
-                if (startTimeOverride != nil) {
+            // Check server for newer progress before starting local playback
+            // (skip if an explicit startTime was provided, e.g. from a bookmark)
+            let serverLibraryItemId = item?.libraryItemId
+            let serverEpisodeId = episode?.serverEpisodeId
+            let localCurrentTime = playbackSession.currentTime
+            let localLastUpdate = playbackSession.updatedAt ?? 0
+
+            Task { [weak self] in
+                if startTimeOverride != nil {
                     playbackSession.currentTime = startTimeOverride!
+                } else if let serverItemId = serverLibraryItemId {
+                    // Check if server has newer progress from another device
+                    if let serverTime = await PlayerProgress.shared.getServerCurrentTimeIfNewer(
+                        serverLibraryItemId: serverItemId,
+                        episodeId: serverEpisodeId,
+                        localCurrentTime: localCurrentTime,
+                        localLastUpdate: localLastUpdate
+                    ) {
+                        AbsLogger.info(message: "prepareLibraryItem: Using server progress \(serverTime) instead of local \(localCurrentTime)")
+                        playbackSession.currentTime = serverTime
+                    }
                 }
-                try playbackSession.save()
-                try self.startPlaybackSession(playbackSession, playWhenReady: playWhenReady, playbackRate: playbackRate)
-                call.resolve(try playbackSession.asDictionary())
-            } catch(let exception) {
-                AbsLogger.error(message: "Failed to start session for local item: \(exception)")
-                debugPrint(exception)
-                call.resolve([:])
+
+                do {
+                    try playbackSession.save()
+                    try self?.startPlaybackSession(playbackSession, playWhenReady: playWhenReady, playbackRate: playbackRate)
+                    call.resolve(try playbackSession.asDictionary())
+                } catch {
+                    AbsLogger.error(message: "Failed to start session for local item: \(error)")
+                    debugPrint(error)
+                    call.resolve([:])
+                }
             }
         } else { // Playing from the server
             ApiClient.startPlaybackSession(libraryItemId: libraryItemId!, episodeId: episodeId, forceTranscode: false) { [weak self] session in

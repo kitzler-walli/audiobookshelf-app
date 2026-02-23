@@ -58,6 +58,8 @@ class AudioPlayer: NSObject {
 
     internal var currentTrackIndex = 0
     private var allPlayerItems:[AVPlayerItem] = []
+    private var allPlayerAssets:[AVAsset] = []
+    private var isTranscodeSession = false
     
     // MARK: - Constructor
     init(sessionId: String, playWhenReady: Bool = false, playbackRate: Float = 1) {
@@ -119,9 +121,11 @@ class AudioPlayer: NSObject {
             }
             
             if let playerAsset = createAsset(itemId: playbackSession.libraryItemId!, track: track, ino: audioFileIno) {
+                self.allPlayerAssets.append(playerAsset)
                 let playerItem = AVPlayerItem(asset: playerAsset)
                 if (playbackSession.playMethod == PlayMethod.transcode.rawValue) {
                     playerItem.preferredForwardBufferDuration = 50
+                    self.isTranscodeSession = true
                 }
                 self.allPlayerItems.append(playerItem)
             }
@@ -198,7 +202,7 @@ class AudioPlayer: NSObject {
             let startOffset = playbackSession.audioTracks[index].startOffset ?? 0.0
             let duration = playbackSession.audioTracks[index].duration
             let trackEnd = startOffset + duration
-            if (time < trackEnd.rounded(.down)) {
+            if (time < trackEnd) {
                 return index
             } else if (index == self.allPlayerItems.count - 1)  {
                 // Seeking past end of last item
@@ -449,6 +453,20 @@ class AudioPlayer: NSObject {
         }
     }
 
+    /// Recreate AVPlayerItems from stored assets for tracks from `fromIndex` onward.
+    /// AVPlayerItems that have played to completion retain an internal "ended" state
+    /// and will be skipped by AVQueuePlayer during auto-advance. Creating fresh items
+    /// ensures they play correctly when seeking backwards.
+    private func refreshPlayerItems(fromIndex: Int) {
+        for i in fromIndex..<self.allPlayerAssets.count {
+            let newItem = AVPlayerItem(asset: self.allPlayerAssets[i])
+            if self.isTranscodeSession {
+                newItem.preferredForwardBufferDuration = 50
+            }
+            self.allPlayerItems[i] = newItem
+        }
+    }
+
     public func seek(_ to: Double, from: String) {
         AbsLogger.info(message:"SEEK: Seek to \(to) from \(from)")
 
@@ -459,13 +477,14 @@ class AudioPlayer: NSObject {
         
         if self.audioPlayer.currentItem == nil {
           self.currentTrackIndex = indexOfSeek
-          
+
           try? playbackSession.update {
               playbackSession.currentTime = to
           }
-          
+
+          self.refreshPlayerItems(fromIndex: indexOfSeek)
           let playerItems = self.allPlayerItems[indexOfSeek..<self.allPlayerItems.count]
-          
+
           DispatchQueue.runOnMainQueue {
               // Let observers know we're rebuilding the queue
               // prevents race conditions on stopping sessions if queue is empty.
@@ -489,13 +508,14 @@ class AudioPlayer: NSObject {
             self.audioPlayer.seek(to: CMTime(seconds: 0, preferredTimescale: 1000))
 
             self.currentTrackIndex = indexOfSeek
-            
+
             try? playbackSession.update {
                 playbackSession.currentTime = to
             }
-            
+
+            self.refreshPlayerItems(fromIndex: indexOfSeek)
             let playerItems = self.allPlayerItems[indexOfSeek..<self.allPlayerItems.count]
-            
+
             DispatchQueue.runOnMainQueue {
                 // Let observers know we're rebuilding the queue
                 // prevents race conditions on stopping sessions if queue is empty.

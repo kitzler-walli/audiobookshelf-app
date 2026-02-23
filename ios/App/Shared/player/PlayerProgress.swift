@@ -150,48 +150,29 @@ class PlayerProgress {
         }
     }
     
-    // TODO: Unused for now
-    private func updateLocalSessionFromServerMediaProgress() async throws {
-        AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: Checking if local media progress was updated on server")
-        guard let session = try Realm(queue: nil).objects(PlaybackSession.self).last(where: {
-            $0.isActiveSession == true && $0.serverConnectionConfigId == Store.serverConfig?.id
-        })?.freeze() else {
-            AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: Failed to get session")
-            return
-        }
-        
-        // Fetch the current progress
-        let progress = await ApiClient.getMediaProgress(libraryItemId: session.libraryItemId!, episodeId: session.episodeId)
+    /// Check the server for newer progress and return the server's currentTime if it's more recent.
+    /// Returns nil if the server doesn't have newer progress or the check fails.
+    public func getServerCurrentTimeIfNewer(serverLibraryItemId: String, episodeId: String?, localCurrentTime: Double, localLastUpdate: Double) async -> Double? {
+        guard Store.serverConfig != nil else { return nil }
+
+        AbsLogger.info(message:"getServerCurrentTimeIfNewer: Checking server for \(serverLibraryItemId)")
+
+        let progress = await ApiClient.getMediaProgress(libraryItemId: serverLibraryItemId, episodeId: episodeId)
         guard let progress = progress else {
-            AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: No progress object")
-            return
+            AbsLogger.info(message:"getServerCurrentTimeIfNewer: No progress from server")
+            return nil
         }
-        
-        // Determine which session is newer
-        let serverLastUpdate = progress.lastUpdate
-        guard let localLastUpdate = session.updatedAt else {
-            AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: No local session updatedAt")
-            return
+
+        let serverIsNewer = progress.lastUpdate > localLastUpdate
+        let timeDiffers = abs(progress.currentTime - localCurrentTime) > 1.0
+
+        if serverIsNewer && timeDiffers {
+            AbsLogger.info(message:"getServerCurrentTimeIfNewer: Server has newer progress (\(progress.currentTime) vs local \(localCurrentTime), serverUpdate=\(progress.lastUpdate) vs localUpdate=\(localLastUpdate))")
+            return progress.currentTime
         }
-        let serverCurrentTime = progress.currentTime
-        let localCurrentTime = session.currentTime
-        
-        let serverIsNewerThanLocal = serverLastUpdate > localLastUpdate
-        let currentTimeIsDifferent = serverCurrentTime != localCurrentTime
-        
-        // Update the session, if needed
-        if serverIsNewerThanLocal && currentTimeIsDifferent {
-            AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: Server has newer time than local serverLastUpdate=\(serverLastUpdate) localLastUpdate=\(localLastUpdate)")
-            guard let session = session.thaw() else { return }
-            try session.update {
-                session.currentTime = serverCurrentTime
-                session.updatedAt = serverLastUpdate
-            }
-            AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: Updated session currentTime newCurrentTime=\(serverCurrentTime) previousCurrentTime=\(localCurrentTime)")
-            PlayerHandler.seek(amount: session.currentTime)
-        } else {
-            AbsLogger.info(message:"updateLocalSessionFromServerMediaProgress: Local session does not need updating; local has latest progress")
-        }
+
+        AbsLogger.info(message:"getServerCurrentTimeIfNewer: Local progress is current")
+        return nil
     }
     
 }
