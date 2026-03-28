@@ -107,6 +107,10 @@ export default {
       console.log('Canceling sleep timer')
       await AbsAudioPlayer.cancelSleepTimer()
     },
+    async getServerProgress(serverItemId, serverEpisodeId) {
+      const url = serverEpisodeId ? `/api/me/progress/${serverItemId}/${serverEpisodeId}` : `/api/me/progress/${serverItemId}`
+      return this.$nativeHttp.get(url)
+    },
     streamClosed() {
       console.log('Stream Closed')
     },
@@ -231,34 +235,66 @@ export default {
           return
         }
 
-        // Check if server has newer progress before resuming from local position
-        if (!isLocal) {
-          const progressUrl = episodeId ? `/api/me/progress/${libraryItemId}/${episodeId}` : `/api/me/progress/${libraryItemId}`
-          this.$nativeHttp
-            .get(progressUrl)
-            .then((serverProgress) => {
-              if (!serverProgress || !serverProgress.lastUpdate) {
-                this.$refs.audioPlayer?.play()
-                return
-              }
+        // Determine server-side IDs (for local items, use stored server IDs)
+        const checkItemId = isLocal ? this.serverLibraryItemId : libraryItemId
+        const checkEpisodeId = isLocal ? this.serverEpisodeId : episodeId
+        const isConnected = !!this.$store.state.user.serverConnectionConfig
+
+        if (checkItemId && isConnected) {
+          try {
+            const serverProgress = await this.getServerProgress(checkItemId, checkEpisodeId)
+            if (serverProgress && serverProgress.lastUpdate) {
               const session = this.$store.state.currentPlaybackSession
               const sessionUpdatedAt = session?.updatedAt || 0
-              if (serverProgress.lastUpdate > sessionUpdatedAt && serverProgress.currentTime !== this.currentTime) {
-                console.log(`[AudioPlayerContainer] Server has newer progress (server=${serverProgress.currentTime}, local=${this.currentTime}), seeking`)
-                AbsAudioPlayer.seek({ value: serverProgress.currentTime })
+              // Get the native player's actual position (not this.currentTime which may be stale)
+              let nativePosition = 0
+              try {
+                const nativeTime = await AbsAudioPlayer.getCurrentTime()
+                nativePosition = nativeTime.value || 0
+              } catch (e) {
+                // Player may be dead; nativePosition stays 0
               }
-              this.$refs.audioPlayer?.play()
-            })
-            .catch((error) => {
-              console.error('[AudioPlayerContainer] Failed to check server progress before resume, playing anyway', error)
-              this.$refs.audioPlayer?.play()
-            })
-            .finally(() => {
-              this.$store.commit('setPlayerDoneStartingPlayback')
-            })
-          return
+              const serverIsNewer = serverProgress.lastUpdate > sessionUpdatedAt
+              const positionDiffers = Math.abs(serverProgress.currentTime - nativePosition) > 1
+              console.log(`[AudioPlayerContainer] Server progress check: server=${serverProgress.currentTime} (lastUpdate=${serverProgress.lastUpdate}), native=${nativePosition} (updatedAt=${sessionUpdatedAt}), serverIsNewer=${serverIsNewer}, positionDiffers=${positionDiffers}`)
+              if (serverIsNewer && positionDiffers) {
+                // Restart session fresh from server's position to avoid stale player issues
+                console.log(`[AudioPlayerContainer] Restarting session at server position ${serverProgress.currentTime}`)
+                let playbackRate = 1
+                if (this.$refs.audioPlayer) {
+                  playbackRate = this.$refs.audioPlayer.currentPlaybackRate || 1
+                }
+                const preparePayload = { libraryItemId, episodeId, playWhenReady: true, playbackRate, startTime: serverProgress.currentTime }
+                AbsAudioPlayer.prepareLibraryItem(preparePayload)
+                  .then((data) => {
+                    if (data.error) {
+                      this.$toast.error(data.error || 'Failed to play')
+                    } else {
+                      console.log('[AudioPlayerContainer] Session restarted at server position', JSON.stringify(data))
+                      if (!libraryItemId.startsWith('local')) {
+                        this.serverLibraryItemId = libraryItemId
+                      }
+                      if (episodeId && !episodeId.startsWith('local')) {
+                        this.serverEpisodeId = episodeId
+                      }
+                    }
+                  })
+                  .catch((error) => {
+                    console.error('[AudioPlayerContainer] Failed to restart session', error)
+                    this.$toast.error('Failed to play')
+                  })
+                  .finally(() => {
+                    this.$store.commit('setPlayerDoneStartingPlayback')
+                  })
+                return
+              }
+            }
+          } catch (error) {
+            console.error('[AudioPlayerContainer] Failed to check server progress before resume, playing anyway', error)
+          }
         }
 
+        // No newer server progress or not connected — just play existing player
         if (this.$refs.audioPlayer) {
           this.$refs.audioPlayer.play()
         }
@@ -338,12 +374,14 @@ export default {
     /**
      * When device gains focus then refresh the timestamps in the audio player
      */
-    deviceFocused(hasFocus) {
+    async deviceFocused(hasFocus) {
       if (!this.$store.state.currentPlaybackSession) return
 
       if (hasFocus) {
         if (!this.$refs.audioPlayer?.isPlaying) {
           const playbackSession = this.$store.state.currentPlaybackSession
+          const isConnected = !!this.$store.state.user.serverConnectionConfig
+
           if (this.$refs.audioPlayer.isLocalPlayMethod) {
             const localLibraryItemId = playbackSession.localLibraryItem?.id
             const localEpisodeId = playbackSession.localEpisodeId
@@ -355,28 +393,53 @@ export default {
               if (localEpisodeId) return mp.localEpisodeId === localEpisodeId
               return mp.localLibraryItemId === localLibraryItemId
             })
+            // Start with local DB progress
+            let bestTime = localMediaProgress?.currentTime ?? this.currentTime
             if (localMediaProgress) {
               console.log('[AudioPlayerContainer] device visibility: found local media progress', localMediaProgress.currentTime, 'last time in player is', this.currentTime)
-              this.$refs.audioPlayer.currentTime = localMediaProgress.currentTime
-              this.$refs.audioPlayer.timeupdate()
             } else {
               console.error('[AudioPlayerContainer] device visibility: Local media progress not found')
             }
+            // Also check server for newer progress (e.g. from another device)
+            if (isConnected && this.serverLibraryItemId) {
+              try {
+                const serverProgress = await this.getServerProgress(this.serverLibraryItemId, this.serverEpisodeId)
+                if (serverProgress && serverProgress.lastUpdate) {
+                  const localLastUpdate = localMediaProgress?.lastUpdate || playbackSession.updatedAt || 0
+                  const serverIsNewer = serverProgress.lastUpdate > localLastUpdate
+                  const positionDiffers = Math.abs(serverProgress.currentTime - bestTime) > 1
+                  console.log(`[AudioPlayerContainer] device visibility (local): server progress=${serverProgress.currentTime} (lastUpdate=${serverProgress.lastUpdate}), local=${bestTime} (lastUpdate=${localLastUpdate})`)
+                  if (serverIsNewer && positionDiffers) {
+                    console.log('[AudioPlayerContainer] device visibility (local): server has newer progress, seeking native player')
+                    bestTime = serverProgress.currentTime
+                    AbsAudioPlayer.seek({ value: bestTime })
+                  }
+                }
+              } catch (error) {
+                console.error('[AudioPlayerContainer] device visibility (local): Failed to check server progress', error)
+              }
+            }
+            this.$refs.audioPlayer.currentTime = bestTime
+            this.$refs.audioPlayer.timeupdate()
           } else {
             const libraryItemId = playbackSession.libraryItemId
             const episodeId = playbackSession.episodeId
-            const url = episodeId ? `/api/me/progress/${libraryItemId}/${episodeId}` : `/api/me/progress/${libraryItemId}`
-            this.$nativeHttp
-              .get(url)
-              .then((data) => {
+            this.getServerProgress(libraryItemId, episodeId)
+              .then(async (data) => {
                 if (!this.$refs.audioPlayer?.isPlaying && data.libraryItemId === libraryItemId) {
                   const sessionUpdatedAt = playbackSession.updatedAt || 0
                   const serverIsNewer = data.lastUpdate && data.lastUpdate > sessionUpdatedAt
-                  const positionDiffers = Math.abs(data.currentTime - this.currentTime) > 1
-                  console.log(`[AudioPlayerContainer] device visibility: server progress=${data.currentTime} (lastUpdate=${data.lastUpdate}), local=${this.currentTime} (updatedAt=${sessionUpdatedAt})`)
+                  // Use native player's actual position instead of this.currentTime
+                  let nativePosition = this.currentTime
+                  try {
+                    const nativeTime = await AbsAudioPlayer.getCurrentTime()
+                    nativePosition = nativeTime.value || this.currentTime
+                  } catch (e) {
+                    // Fall back to this.currentTime
+                  }
+                  const positionDiffers = Math.abs(data.currentTime - nativePosition) > 1
+                  console.log(`[AudioPlayerContainer] device visibility: server progress=${data.currentTime} (lastUpdate=${data.lastUpdate}), native=${nativePosition} (updatedAt=${sessionUpdatedAt})`)
                   if (serverIsNewer && positionDiffers) {
-                    // Seek the native player so the session's currentTime is updated,
-                    // not just the UI — prevents stale position from being synced back
                     console.log('[AudioPlayerContainer] device visibility: server has newer progress, seeking native player')
                     AbsAudioPlayer.seek({ value: data.currentTime })
                   }
