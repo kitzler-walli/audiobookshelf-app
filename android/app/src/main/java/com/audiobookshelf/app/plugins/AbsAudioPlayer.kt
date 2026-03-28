@@ -219,44 +219,72 @@ class AbsAudioPlayer : Plugin() {
     }
 
     if (libraryItemId.startsWith("local")) { // Play local media item
-      DeviceManager.dbManager.getLocalLibraryItem(libraryItemId)?.let {
+      DeviceManager.dbManager.getLocalLibraryItem(libraryItemId)?.let { localItem ->
         var episode: PodcastEpisode? = null
         if (episodeId.isNotEmpty()) {
-          val podcastMedia = it.media as Podcast
+          val podcastMedia = localItem.media as Podcast
           episode = podcastMedia.episodes?.find { ep -> ep.id == episodeId }
           if (episode == null) {
             Log.e(tag, "prepareLibraryItem: Podcast episode not found $episodeId")
             return call.resolve(JSObject("{\"error\":\"Podcast episode not found\"}"))
           }
         }
-        if (!it.hasTracks(episode)) {
+        if (!localItem.hasTracks(episode)) {
           return call.resolve(JSObject("{\"error\":\"No audio files found on device. Download book again to fix.\"}"))
         }
 
-        Handler(Looper.getMainLooper()).post {
-          Log.d(tag, "prepareLibraryItem: Preparing Local Media item ${jacksonMapper.writeValueAsString(it)}")
-          val playbackSession = it.getPlaybackSession(episode, playerNotificationService.getDeviceInfo())
-          if (startTimeOverride != null) {
-            Log.d(tag, "prepareLibraryItem: Using start time override $startTimeOverride")
-            playbackSession.currentTime = startTimeOverride
-          }
+        // Check server for newer progress before starting local playback.
+        // Use the local media progress's lastUpdate (not the session's updatedAt which is always NOW).
+        val serverItemId = localItem.libraryItemId
+        val serverEpisodeId = episode?.serverEpisodeId
+        val localEpisodeId = episode?.id
+        val mediaProgressId = if (localEpisodeId.isNullOrEmpty()) localItem.id else "${localItem.id}-$localEpisodeId"
+        val localMediaProgress = DeviceManager.dbManager.getLocalMediaProgress(mediaProgressId)
+        val localLastUpdate = localMediaProgress?.lastUpdate ?: 0L
+        val localCurrentTime = localMediaProgress?.currentTime ?: 0.0
 
-          if (playerNotificationService.mediaProgressSyncer.listeningTimerRunning) { // If progress syncing then first stop before preparing next
-            playerNotificationService.mediaProgressSyncer.stop {
-              Log.d(tag, "Media progress syncer was already syncing - stopped")
-              PlayerListener.lazyIsPlaying = false
-
-              Handler(Looper.getMainLooper()).post { // TODO: This was needed again which is probably a design a flaw
-                playerNotificationService.preparePlayer(
-                  playbackSession,
-                  playWhenReady,
-                  playbackRate
-                )
-              }
+        val startLocalPlayback = fun(serverCurrentTime: Double?) {
+          Handler(Looper.getMainLooper()).post {
+            Log.d(tag, "prepareLibraryItem: Preparing Local Media item ${jacksonMapper.writeValueAsString(localItem)}")
+            val playbackSession = localItem.getPlaybackSession(episode, playerNotificationService.getDeviceInfo())
+            if (startTimeOverride != null) {
+              Log.d(tag, "prepareLibraryItem: Using start time override $startTimeOverride")
+              playbackSession.currentTime = startTimeOverride
+            } else if (serverCurrentTime != null) {
+              AbsLogger.info("AbsAudioPlayer", "prepareLibraryItem: Using server progress $serverCurrentTime instead of local $localCurrentTime")
+              playbackSession.currentTime = serverCurrentTime
             }
-          } else {
-            playerNotificationService.mediaProgressSyncer.reset()
-            playerNotificationService.preparePlayer(playbackSession, playWhenReady, playbackRate)
+
+            if (playerNotificationService.mediaProgressSyncer.listeningTimerRunning) { // If progress syncing then first stop before preparing next
+              playerNotificationService.mediaProgressSyncer.stop {
+                Log.d(tag, "Media progress syncer was already syncing - stopped")
+                PlayerListener.lazyIsPlaying = false
+
+                Handler(Looper.getMainLooper()).post { // TODO: This was needed again which is probably a design a flaw
+                  playerNotificationService.preparePlayer(
+                    playbackSession,
+                    playWhenReady,
+                    playbackRate
+                  )
+                }
+              }
+            } else {
+              playerNotificationService.mediaProgressSyncer.reset()
+              playerNotificationService.preparePlayer(playbackSession, playWhenReady, playbackRate)
+            }
+          }
+        }
+
+        if (startTimeOverride != null || serverItemId.isNullOrEmpty() || DeviceManager.serverConnectionConfig == null) {
+          startLocalPlayback(null)
+        } else {
+          apiHandler.getMediaProgress(serverItemId, serverEpisodeId, null) { serverProgress ->
+            if (serverProgress != null && serverProgress.lastUpdate > localLastUpdate &&
+              Math.abs(serverProgress.currentTime - localCurrentTime) > 1.0) {
+              startLocalPlayback(serverProgress.currentTime)
+            } else {
+              startLocalPlayback(null)
+            }
           }
         }
         return call.resolve(JSObject())

@@ -288,10 +288,23 @@ class AbsDatabase : Plugin() {
       return call.resolve()
     }
 
-    apiHandler.syncLocalMediaProgressForUser {
+    apiHandler.syncLocalMediaProgressForUser { serverMediaProgressList ->
       val savedSessions = DeviceManager.dbManager.getPlaybackSessions().filter { it.serverConnectionConfigId == DeviceManager.serverConnectionConfigId }
 
       if (savedSessions.isNotEmpty()) {
+        // Before sending, update stale sessions to prevent overwriting newer server progress.
+        // If another device advanced the position while this device was offline,
+        // sending the old currentTime would regress the server's progress.
+        val serverProgressByItem = serverMediaProgressList.associateBy { it.mediaItemId }
+        savedSessions.forEach { session ->
+          val serverProgress = serverProgressByItem[session.mediaItemId]
+          if (serverProgress != null && serverProgress.lastUpdate > session.updatedAt) {
+            AbsLogger.info("AbsDatabase", "syncLocalSessionsWithServer: Session ${session.id} has stale progress (session updatedAt=${session.updatedAt}, server lastUpdate=${serverProgress.lastUpdate}). Updating currentTime from ${session.currentTime} to ${serverProgress.currentTime}")
+            session.currentTime = serverProgress.currentTime
+            DeviceManager.dbManager.savePlaybackSession(session)
+          }
+        }
+
         apiHandler.sendSyncLocalSessions(savedSessions) { success, errorMsg ->
           if (!success) {
             call.resolve(JSObject("{\"error\":\"$errorMsg\"}"))

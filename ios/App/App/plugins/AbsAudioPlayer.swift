@@ -100,7 +100,13 @@ public class AbsAudioPlayer: CAPPlugin, CAPBridgedPlugin {
             let serverLibraryItemId = item?.libraryItemId
             let serverEpisodeId = episode?.serverEpisodeId
             let localCurrentTime = playbackSession.currentTime
-            let localLastUpdate = playbackSession.updatedAt ?? 0
+            // Use the local media progress's lastUpdate, NOT the session's updatedAt.
+            // The session was just created with updatedAt = NOW, which would always appear
+            // newer than the server, defeating the purpose of this check.
+            let localEpisodeId = episode?.id
+            let mediaProgressId = (localEpisodeId != nil) ? "\(libraryItemId!)-\(localEpisodeId!)" : libraryItemId!
+            let localMediaProgress = Database.shared.getLocalMediaProgress(localMediaProgressId: mediaProgressId)
+            let localLastUpdate = localMediaProgress?.lastUpdate ?? 0
 
             Task { [weak self] in
                 if startTimeOverride != nil {

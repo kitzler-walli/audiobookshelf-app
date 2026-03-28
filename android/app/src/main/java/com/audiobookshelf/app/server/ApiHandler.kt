@@ -778,21 +778,21 @@ class ApiHandler(var ctx:Context) {
     }
   }
 
-  fun syncLocalMediaProgressForUser(cb: () -> Unit) {
+  fun syncLocalMediaProgressForUser(cb: (List<MediaProgress>) -> Unit) {
     AbsLogger.info("ApiHandler", "[ApiHandler] syncLocalMediaProgressForUser: Server connection ${DeviceManager.serverConnectionConfigName}")
 
     // Get all local media progress for this server
     val allLocalMediaProgress = DeviceManager.dbManager.getAllLocalMediaProgress().filter { it.serverConnectionConfigId == DeviceManager.serverConnectionConfigId }
     if (allLocalMediaProgress.isEmpty()) {
       AbsLogger.info("ApiHandler", "[ApiHandler] syncLocalMediaProgressForUser: No local media progress to sync")
-      return cb()
+    } else {
+      AbsLogger.info("ApiHandler", "syncLocalMediaProgressForUser: Found ${allLocalMediaProgress.size} local media progress")
     }
-
-    AbsLogger.info("ApiHandler", "syncLocalMediaProgressForUser: Found ${allLocalMediaProgress.size} local media progress")
 
     getCurrentUser { user ->
       if (user == null) {
         AbsLogger.error("ApiHandler", "syncLocalMediaProgressForUser: Failed to load user from server (${DeviceManager.serverConnectionConfigName})")
+        cb(emptyList())
       } else {
         var numLocalMediaProgressUptToDate = 0
         var numLocalMediaProgressUpdated = 0
@@ -845,8 +845,8 @@ class ApiHandler(var ctx:Context) {
         }
 
         AbsLogger.info("ApiHandler", "syncLocalMediaProgressForUser: Finishing syncing local media progress with server. $numLocalMediaProgressUptToDate up-to-date, $numLocalMediaProgressUpdated updated")
+        cb(user.mediaProgress)
       }
-      cb()
     }
   }
 }

@@ -530,16 +530,24 @@ class ApiClient {
                 $0.serverConnectionConfigId == Store.serverConfig?.id
             }.map { $0.freeze() }
             AbsLogger.info(message: "syncLocalSessionsWithServer: Found \(localMediaProgressList.count) local media progress for server")
-            
-            if (localMediaProgressList.isEmpty) {
-                AbsLogger.info(message: "syncLocalSessionsWithServer: No local progress to sync")
-            } else {
-                let currentUser = await ApiClient.getCurrentUser()
-                guard let currentUser = currentUser else {
-                    AbsLogger.info(message: "syncLocalSessionsWithServer: No User")
-                    return
-                }
+
+            // Fetch current user to get server's latest progress
+            // Needed for both local media progress sync AND preventing stale session uploads
+            let currentUser = await ApiClient.getCurrentUser()
+            var serverProgressByItem: [String: MediaProgress] = [:]
+
+            if let currentUser = currentUser {
                 try currentUser.mediaProgress.forEach { mediaProgress in
+                    // Build server progress lookup map
+                    let lookupKey: String
+                    if let episodeId = mediaProgress.episodeId, !episodeId.isEmpty {
+                        lookupKey = "\(mediaProgress.libraryItemId)-\(episodeId)"
+                    } else {
+                        lookupKey = mediaProgress.libraryItemId
+                    }
+                    serverProgressByItem[lookupKey] = mediaProgress
+
+                    // Sync local media progress with server (update local if server is newer)
                     let localMediaProgress = localMediaProgressList.first { lmp in
                         if (lmp.episodeId != nil) {
                             return lmp.episodeId == mediaProgress.episodeId
@@ -556,18 +564,48 @@ class ApiClient {
                         AbsLogger.info(message: "syncLocalSessionsWithServer: Local progress for \(localMediaProgress!.id) is more recent then server progress")
                     }
                 }
+            } else {
+                AbsLogger.info(message: "syncLocalSessionsWithServer: No User, skipping sync")
+                return
             }
-            
+
             // Send saved playback sessions to server and remove them from db
             let playbackSessions = Database.shared.getAllPlaybackSessions().filter {
                 $0.serverConnectionConfigId == Store.serverConfig?.id
             }.map { $0.freeze() }
             AbsLogger.info(message: "syncLocalSessionsWithServer: Found \(playbackSessions.count) playback sessions for server (first sync: \(isFirstSync))")
             if (!playbackSessions.isEmpty) {
-                let success = await ApiClient.reportAllLocalPlaybackSessions(playbackSessions)
+                // Before sending, update stale sessions to prevent overwriting newer server progress.
+                // If another device advanced the position while this device was offline,
+                // sending the old currentTime would regress the server's progress.
+                for session in playbackSessions {
+                    let serverItemId = session.localLibraryItem?.libraryItemId ?? session.libraryItemId ?? ""
+                    guard !serverItemId.isEmpty else { continue }
+                    let epId = session.episodeId
+                    let lookupKey = (epId != nil && !epId!.isEmpty) ? "\(serverItemId)-\(epId!)" : serverItemId
+
+                    if let serverProgress = serverProgressByItem[lookupKey] {
+                        let sessionUpdatedAt = session.updatedAt ?? 0
+                        if serverProgress.lastUpdate > sessionUpdatedAt {
+                            AbsLogger.info(message: "syncLocalSessionsWithServer: Session \(session.id) has stale progress (session updatedAt=\(sessionUpdatedAt), server lastUpdate=\(serverProgress.lastUpdate)). Updating currentTime from \(session.currentTime) to \(serverProgress.currentTime)")
+                            if let thawed = session.thaw() {
+                                try thawed.update {
+                                    thawed.currentTime = serverProgress.currentTime
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Re-fetch sessions after stale-progress updates
+                let updatedSessions = Database.shared.getAllPlaybackSessions().filter {
+                    $0.serverConnectionConfigId == Store.serverConfig?.id
+                }.map { $0.freeze() }
+
+                let success = await ApiClient.reportAllLocalPlaybackSessions(updatedSessions)
                 if (success) {
                     // Remove sessions from db
-                    try playbackSessions.forEach { session in
+                    try updatedSessions.forEach { session in
                         AbsLogger.info(message: "syncLocalSessionsWithServer: Handling \(session.displayTitle ?? "") (\(session.id)) \(session.isActiveSession)")
                         // On first sync then remove all sessions
                         if (!session.isActiveSession || isFirstSync) {
