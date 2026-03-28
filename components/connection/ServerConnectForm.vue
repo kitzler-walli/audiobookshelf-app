@@ -367,6 +367,10 @@ export default {
           console.warn(`[SSO] No code received`)
           this.$toast.error(`SSO: The response from the SSO Provider did not include a code (authentication error?)`)
         }
+      } else if (url.startsWith('audiobookshelf://device-code-authorize')) {
+        // Device code authorization requires an active authenticated session.
+        // This is handled by the default layout when the user is logged in.
+        this.$toast.error('You must be logged in to authorize a device')
       } else {
         console.warn(`[ServerConnectForm] appUrlOpen: Unknown url: ${url} - host: ${urlObj.hostname} - path: ${urlObj.pathname}`)
       }

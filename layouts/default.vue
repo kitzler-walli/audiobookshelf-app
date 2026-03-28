@@ -11,6 +11,7 @@
     <modals-rssfeeds-rss-feed-modal />
     <app-side-drawer :key="currentLang" />
     <readers-reader />
+    <modals-device-code-authorize-modal ref="deviceCodeAuthorizeModal" />
   </div>
 </template>
 
@@ -318,10 +319,52 @@ export default {
       console.log('Changed lang', code)
       this.currentLang = code
       document.documentElement.lang = code
+    },
+    handleUrlOpen(url) {
+      if (!url || !url.startsWith('audiobookshelf://device-code-authorize')) return
+
+      const urlObj = new URL(url)
+      const userCode = urlObj.searchParams.get('code')
+      const server = urlObj.searchParams.get('server')
+
+      if (!userCode || !server) {
+        this.$toast.error('Invalid device authorization link: missing code or server')
+        return
+      }
+
+      // Use the active server connection and token from the user store
+      const activeConfig = this.$store.state.user.serverConnectionConfig
+      const activeToken = this.$store.state.user.accessToken
+
+      if (!activeConfig || !activeToken) {
+        this.$toast.error('Not connected to a server')
+        return
+      }
+
+      // Check that the active connection matches the server in the deep link
+      // Compare by origin (protocol + host + port) since paths may differ with reverse proxies/subpath hosting
+      try {
+        const activeOrigin = new URL(activeConfig.address).origin
+        const requestedOrigin = new URL(server).origin
+        if (activeOrigin !== requestedOrigin) {
+          this.$toast.error(`Not connected to this server`)
+          return
+        }
+      } catch (e) {
+        this.$toast.error('Invalid server URL in authorization link')
+        return
+      }
+
+      this.$refs.deviceCodeAuthorizeModal.open({
+        userCode,
+        serverAddress: activeConfig.address,
+        serverToken: activeToken
+      })
     }
   },
   async mounted() {
     this.$eventBus.$on('change-lang', this.changeLanguage)
+    this.$eventBus.$on('url-open', this.handleUrlOpen)
     document.addEventListener('visibilitychange', this.visibilityChanged)
 
     this.$socket.on('user_updated', this.userUpdated)
@@ -358,6 +401,7 @@ export default {
   },
   beforeDestroy() {
     this.$eventBus.$off('change-lang', this.changeLanguage)
+    this.$eventBus.$off('url-open', this.handleUrlOpen)
     document.removeEventListener('visibilitychange', this.visibilityChanged)
     this.$socket.off('user_updated', this.userUpdated)
     this.$socket.off('user_media_progress_updated', this.userMediaProgressUpdated)
