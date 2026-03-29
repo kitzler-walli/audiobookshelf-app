@@ -1,10 +1,22 @@
 <template>
   <div class="w-full h-full min-h-full relative">
+    <!-- Pull-to-refresh indicator -->
+    <div class="pull-to-refresh-container" :class="{ 'pull-to-refresh-animating': !isPulling }" :style="{ height: pullDownDistance + 'px' }">
+      <div v-if="pullDownDistance > 0" class="flex items-center justify-center h-full">
+        <div class="pull-to-refresh-spinner" :class="{ 'pull-to-refresh-spinning': isRefreshing }">
+          <span class="material-symbols" :style="{ transform: pullIconTransform, opacity: pullIconOpacity }">refresh</span>
+        </div>
+        <p v-if="isRefreshing" class="pl-2 text-sm text-gray-300">{{ $strings.MessageLoadingServerData || 'Refreshing...' }}</p>
+        <p v-else-if="pullThresholdReached" class="pl-2 text-sm text-gray-300">Release to refresh</p>
+        <p v-else class="pl-2 text-sm text-gray-300">Pull to refresh</p>
+      </div>
+    </div>
+
     <div v-if="attemptingConnection" class="w-full pt-4 flex items-center justify-center">
       <widgets-loading-spinner />
       <p class="pl-4">{{ $strings.MessageAttemptingServerConnection }}</p>
     </div>
-    <div v-if="shelves.length && isLoading" class="w-full pt-4 flex items-center justify-center">
+    <div v-if="shelves.length && isLoading && !isRefreshing" class="w-full pt-4 flex items-center justify-center">
       <widgets-loading-spinner />
       <p class="pl-4">{{ $strings.MessageLoadingServerData }}</p>
     </div>
@@ -48,7 +60,16 @@ export default {
       lastServerFetchLibraryId: null,
       lastLocalFetch: 0,
       localLibraryItems: [],
-      isLoading: false
+      isLoading: false,
+      // Pull-to-refresh state
+      pullDownDistance: 0,
+      pullStartY: 0,
+      pullStartX: 0,
+      isPulling: false,
+      pullDirectionDetermined: false,
+      isRefreshing: false,
+      pullThreshold: 70,
+      maxPullDistance: 120
     }
   },
   watch: {
@@ -112,6 +133,17 @@ export default {
     },
     attemptingConnection() {
       return this.$store.state.attemptingConnection
+    },
+    pullThresholdReached() {
+      return this.pullDownDistance >= this.pullThreshold
+    },
+    pullIconTransform() {
+      if (this.isRefreshing) return 'rotate(0deg)'
+      const rotation = Math.min((this.pullDownDistance / this.pullThreshold) * 360, 360)
+      return `rotate(${rotation}deg)`
+    },
+    pullIconOpacity() {
+      return Math.min(this.pullDownDistance / (this.pullThreshold * 0.5), 1)
     }
   },
   methods: {
@@ -326,11 +358,93 @@ export default {
         }
       })
     },
+    onTouchStart(e) {
+      if (this.isRefreshing) return
+      const scrollWrapper = document.getElementById('bookshelf-wrapper')
+      if (!scrollWrapper || scrollWrapper.scrollTop > 0) return
+      this.pullStartY = e.touches[0].clientY
+      this.pullStartX = e.touches[0].clientX
+      this.isPulling = false
+      this.pullDirectionDetermined = false
+    },
+    onTouchMove(e) {
+      if (this.isRefreshing || this.pullStartY === 0) return
+      const scrollWrapper = document.getElementById('bookshelf-wrapper')
+      if (!scrollWrapper || scrollWrapper.scrollTop > 0) {
+        this.pullDownDistance = 0
+        this.isPulling = false
+        return
+      }
+
+      const deltaY = e.touches[0].clientY - this.pullStartY
+      const deltaX = e.touches[0].clientX - this.pullStartX
+
+      // Determine swipe direction on first significant movement
+      if (!this.pullDirectionDetermined && (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5)) {
+        this.pullDirectionDetermined = true
+        // Horizontal swipe — let the shelf scroll handle it
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          this.isPulling = false
+          return
+        }
+        // Vertical downward — engage pull-to-refresh
+        this.isPulling = deltaY > 0
+      }
+
+      if (!this.isPulling) return
+
+      if (deltaY > 0) {
+        // Apply resistance: diminishing returns as you pull further
+        this.pullDownDistance = Math.min(deltaY * 0.5, this.maxPullDistance)
+        if (this.pullDownDistance > 10) {
+          e.preventDefault()
+        }
+      } else {
+        this.pullDownDistance = 0
+      }
+    },
+    onTouchEnd() {
+      if (this.isPulling && !this.isRefreshing) {
+        if (this.pullThresholdReached) {
+          this.triggerRefresh()
+        } else {
+          this.pullDownDistance = 0
+        }
+      }
+      this.isPulling = false
+      this.pullStartY = 0
+      this.pullStartX = 0
+      this.pullDirectionDetermined = false
+    },
+    async triggerRefresh() {
+      this.isRefreshing = true
+      this.pullDownDistance = this.pullThreshold
+      // Reset throttle timestamps to force a fresh fetch
+      this.lastServerFetch = 0
+      this.lastLocalFetch = 0
+      await this.$store.dispatch('globals/loadLocalMediaProgress')
+      await this.fetchCategories()
+      this.isRefreshing = false
+      this.pullDownDistance = 0
+    },
     initListeners() {
       this.$eventBus.$on('library-changed', this.libraryChanged)
+      const scrollWrapper = document.getElementById('bookshelf-wrapper')
+      if (scrollWrapper) {
+        // Use capture phase to intercept touches before horizontal shelf scroll containers consume them
+        scrollWrapper.addEventListener('touchstart', this.onTouchStart, { passive: true, capture: true })
+        scrollWrapper.addEventListener('touchmove', this.onTouchMove, { passive: false, capture: true })
+        scrollWrapper.addEventListener('touchend', this.onTouchEnd, { passive: true, capture: true })
+      }
     },
     removeListeners() {
       this.$eventBus.$off('library-changed', this.libraryChanged)
+      const scrollWrapper = document.getElementById('bookshelf-wrapper')
+      if (scrollWrapper) {
+        scrollWrapper.removeEventListener('touchstart', this.onTouchStart, { capture: true })
+        scrollWrapper.removeEventListener('touchmove', this.onTouchMove, { capture: true })
+        scrollWrapper.removeEventListener('touchend', this.onTouchEnd, { capture: true })
+      }
     }
   },
   async mounted() {
@@ -348,3 +462,23 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.pull-to-refresh-container {
+  overflow: hidden;
+}
+.pull-to-refresh-container.pull-to-refresh-animating {
+  transition: height 0.2s ease-out;
+}
+.pull-to-refresh-spinning span {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
