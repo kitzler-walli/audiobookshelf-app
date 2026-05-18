@@ -128,7 +128,6 @@ export default ({ app, store }, inject) => {
 
   // Listen for token refresh events from native app
   AbsDatabase.addListener('onTokenRefresh', (data) => {
-    console.log('[db] onTokenRefresh', data)
     store.commit('user/setAccessToken', data.accessToken)
   })
 
