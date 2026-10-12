@@ -37,7 +37,8 @@ export default {
       sleepInterval: null,
       currentEndOfChapterTime: 0,
       serverLibraryItemId: null,
-      serverEpisodeId: null
+      serverEpisodeId: null,
+      hasDoneInitialServerCheck: false
     }
   },
   mixins: [CellularPermissionHelpers],
@@ -51,6 +52,20 @@ export default {
     },
     currentPlaybackSession() {
       return this.$store.state.currentPlaybackSession
+    }
+  },
+  watch: {
+    // Cold-launch sync: when a session is restored on app start, document.visibilitychange
+    // and App.appStateChange never fire (the app is already foregrounded), so deviceFocused
+    // doesn't run. Trigger it once when the session first becomes available.
+    currentPlaybackSession(newSession) {
+      if (!newSession || this.hasDoneInitialServerCheck) return
+      this.hasDoneInitialServerCheck = true
+      this.$nextTick(() => {
+        if (!this.$refs.audioPlayer?.isPlaying) {
+          this.deviceFocused(true)
+        }
+      })
     }
   },
   methods: {

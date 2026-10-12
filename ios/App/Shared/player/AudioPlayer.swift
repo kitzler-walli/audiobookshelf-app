@@ -330,16 +330,112 @@ class AudioPlayer: NSObject {
     }
     
     // MARK: - Methods
+
+    // Skip the pre-play server progress check for sessions paused less than this many ms ago.
+    // Short pause/play cycles are local activity, not cross-device sync.
+    private static let prePlayServerCheckStaleThresholdMs: Double = 30_000
+    // Hard cap on how long we wait for the server progress check before starting playback anyway.
+    private static let prePlayServerCheckTimeoutNs: UInt64 = 2_000_000_000
+
     public func play(allowSeekBack: Bool = false, isInitializing: Bool = false) {
         guard self.isInitialized() || isInitializing else { return }
         guard let session = self.getPlaybackSession() else {
             NotificationCenter.default.post(name: NSNotification.Name(PlayerEvents.failed.rawValue), object: nil)
             return
         }
-        
+
+        // Freshly-prepared sessions don't need a server check
+        if isInitializing {
+            self.startPlayback(allowSeekBack: allowSeekBack)
+            return
+        }
+
+        // Capture primitives off the Realm-managed session before async work (Realm objects are thread-confined)
+        let libraryItemId = session.libraryItemId ?? ""
+        let episodeId = session.episodeId
+        let sessionUpdatedAt = session.updatedAt ?? 0
+        let nowMs = Date().timeIntervalSince1970 * 1000
+        let elapsedMs = nowMs - sessionUpdatedAt
+
+        guard !libraryItemId.isEmpty, elapsedMs > AudioPlayer.prePlayServerCheckStaleThresholdMs else {
+            // No server reference, or session was just updated locally — no cross-device check needed
+            self.startPlayback(allowSeekBack: allowSeekBack)
+            return
+        }
+
+        AbsLogger.info(message: "play: session paused \(Int(elapsedMs / 1000))s ago, checking server for newer progress before resume")
+        let currentSessionId = self.sessionId
+
+        Task { [weak self] in
+            guard let self = self else { return }
+            let serverProgress = await Self.fetchServerProgressWithTimeout(libraryItemId: libraryItemId, episodeId: episodeId)
+            await MainActor.run {
+                if let serverProgress {
+                    self.applyServerProgressIfNewer(sessionId: currentSessionId, serverProgress: serverProgress, originalSessionUpdatedAt: sessionUpdatedAt)
+                }
+                self.startPlayback(allowSeekBack: allowSeekBack)
+            }
+        }
+    }
+
+    private static func fetchServerProgressWithTimeout(libraryItemId: String, episodeId: String?) async -> MediaProgress? {
+        await withTaskGroup(of: Optional<MediaProgress>.self) { group in
+            group.addTask { await ApiClient.getMediaProgress(libraryItemId: libraryItemId, episodeId: episodeId) }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: AudioPlayer.prePlayServerCheckTimeoutNs)
+                return nil
+            }
+            // next() returns the inner task result; flatten the double-optional
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+    }
+
+    private func applyServerProgressIfNewer(sessionId: String, serverProgress: MediaProgress, originalSessionUpdatedAt: Double) {
+        // Re-fetch the session; it may have changed during the network round-trip
+        guard sessionId == self.sessionId,
+              let session = Database.shared.getPlaybackSession(id: sessionId) else { return }
+
+        // Bail if the session was updated locally during the network request — local activity wins
+        guard (session.updatedAt ?? 0) <= originalSessionUpdatedAt else {
+            AbsLogger.info(message: "play: session updated locally during server check, skipping server progress apply")
+            return
+        }
+        guard serverProgress.lastUpdate > originalSessionUpdatedAt else { return }
+        guard abs(serverProgress.currentTime - session.currentTime) > 1 else { return }
+
+        AbsLogger.info(message: "play: applying server progress (currentTime=\(serverProgress.currentTime) lastUpdate=\(serverProgress.lastUpdate)) over session (currentTime=\(session.currentTime) updatedAt=\(originalSessionUpdatedAt))")
+
+        do {
+            try session.update {
+                session.currentTime = serverProgress.currentTime
+                session.updatedAt = serverProgress.lastUpdate
+            }
+        } catch {
+            AbsLogger.error(message: "play: failed to update session with server progress: \(error)", error: error)
+        }
+
+        // Mirror to LocalMediaProgress for local items, so subsequent loads see the synced position
+        if session.isLocal, let localMediaProgressId = session.localMediaProgressId,
+           let localProgress = Database.shared.getLocalMediaProgress(localMediaProgressId: localMediaProgressId) {
+            do {
+                try localProgress.updateFromServerMediaProgress(serverProgress)
+            } catch {
+                AbsLogger.error(message: "play: failed to update local media progress from server: \(error)", error: error)
+            }
+        }
+    }
+
+    private func startPlayback(allowSeekBack: Bool) {
+        guard let session = self.getPlaybackSession() else {
+            NotificationCenter.default.post(name: NSNotification.Name(PlayerEvents.failed.rawValue), object: nil)
+            return
+        }
+
         // Determine where we are starting playback
         let currentTime = allowSeekBack ? PlayerTimeUtils.calcSeekBackTime(currentTime: session.currentTime, lastPlayedMs: session.updatedAt) : session.currentTime
-        
+
         // Sync our new playback position
         let sessionId = self.sessionId
         Task { await PlayerProgress.shared.syncFromPlayer(sessionId: sessionId, currentTime: currentTime, includesPlayProgress: self.isPlaying(), isStopping: false) }
@@ -347,7 +443,7 @@ class AudioPlayer: NSObject {
         // Start playback, with a seek, for as smooth a scrub bar start as possible
         let currentTrackStartOffset = session.audioTracks[self.currentTrackIndex].startOffset ?? 0.0
         let seekTime = currentTime - currentTrackStartOffset
-        
+
         DispatchQueue.runOnMainQueue {
             self.audioPlayer.seek(to: CMTime(seconds: seekTime, preferredTimescale: 1000), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] completed in
                 guard completed else { return }

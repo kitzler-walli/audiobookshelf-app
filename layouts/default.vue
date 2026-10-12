@@ -17,6 +17,7 @@
 
 <script>
 import { CapacitorHttp } from '@capacitor/core'
+import { App } from '@capacitor/app'
 import { AbsLogger } from '@/plugins/capacitor'
 
 export default {
@@ -27,7 +28,8 @@ export default {
       disconnectTime: 0,
       socketDisconnectedTime: 0,
       timeLostFocus: 0,
-      currentLang: null
+      currentLang: null,
+      appStateChangeListener: null
     }
   },
   watch: {
@@ -322,23 +324,25 @@ export default {
         this.$store.commit('globals/updateLocalMediaProgress', newLocalMediaProgress)
       }
     },
+    async handleAppForeground(source) {
+      const elapsedTimeOutOfFocus = Date.now() - this.timeLostFocus
+      console.log(`✅ [default] ${source}: foreground (${elapsedTimeOutOfFocus}ms out of focus)`)
+      if (elapsedTimeOutOfFocus > 30000) {
+        console.log(`✅ [default] ${source}: reloading local media progress`)
+        await this.$store.dispatch('globals/loadLocalMediaProgress')
+      }
+      this.$eventBus.$emit('device-focus-update', true)
+    },
+    handleAppBackground(source) {
+      console.log(`⛔️ [default] ${source}: background`)
+      this.timeLostFocus = Date.now()
+      this.$eventBus.$emit('device-focus-update', false)
+    },
     async visibilityChanged() {
       if (document.visibilityState === 'visible') {
-        const elapsedTimeOutOfFocus = Date.now() - this.timeLostFocus
-        console.log(`✅ [default] device visibility: has focus (${elapsedTimeOutOfFocus}ms out of focus)`)
-        // If device out of focus for more than 30s then reload local media progress
-        if (elapsedTimeOutOfFocus > 30000) {
-          console.log(`✅ [default] device visibility: reloading local media progress`)
-          // Reload local media progresses
-          await this.$store.dispatch('globals/loadLocalMediaProgress')
-        }
-        if (document.visibilityState === 'visible') {
-          this.$eventBus.$emit('device-focus-update', true)
-        }
+        await this.handleAppForeground('visibilitychange')
       } else {
-        console.log('⛔️ [default] device visibility: does NOT have focus')
-        this.timeLostFocus = Date.now()
-        this.$eventBus.$emit('device-focus-update', false)
+        this.handleAppBackground('visibilitychange')
       }
     },
     changeLanguage(code) {
@@ -393,6 +397,13 @@ export default {
     this.$eventBus.$on('url-open', this.handleUrlOpen)
     document.addEventListener('visibilitychange', this.visibilityChanged)
 
+    // Capacitor App.appStateChange fires reliably on iOS background/foreground transitions,
+    // unlike document.visibilitychange which the WebView may not always emit. We listen to both.
+    this.appStateChangeListener = await App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) this.handleAppForeground('appStateChange')
+      else this.handleAppBackground('appStateChange')
+    })
+
     this.$socket.on('user_updated', this.userUpdated)
     this.$socket.on('user_media_progress_updated', this.userMediaProgressUpdated)
 
@@ -429,6 +440,8 @@ export default {
     this.$eventBus.$off('change-lang', this.changeLanguage)
     this.$eventBus.$off('url-open', this.handleUrlOpen)
     document.removeEventListener('visibilitychange', this.visibilityChanged)
+    this.appStateChangeListener?.remove()
+    this.appStateChangeListener = null
     this.$socket.off('user_updated', this.userUpdated)
     this.$socket.off('user_media_progress_updated', this.userMediaProgressUpdated)
   }
