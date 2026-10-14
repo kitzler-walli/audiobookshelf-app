@@ -3,10 +3,17 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0029755BE6898C3EAFC865FD /* PlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF5EFCAE497A67DDA671FFD /* PlayerController.swift */; };
+		04C4F468DE67252BD470F2D0 /* DebugViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767515B5419DA903189B56A7 /* DebugViews.swift */; };
+		05FD4C20288522470E82C7A6 /* AudiobookshelfWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2080A6A586551FC0E93B872A /* AudiobookshelfWatchApp.swift */; };
+		0C17817F3B3E450F09C959BC /* BrowseViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F43DD6FA915B55E9C3562C7 /* BrowseViews.swift */; };
+		119FBA47B41670AB07ECE814 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F24EA1B36D67CD650327605 /* AppModel.swift */; };
+		1C5FFBEE44DD9FCF3D614760 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55F9D8BB2030ED98A948E64E /* Assets.xcassets */; };
+		2087590FF7B3EF1E0D202B7C /* RangeDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 325B9BEE4CADC7286C80BAB4 /* RangeDownloader.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		3A200C1527D64D7E00CBF02E /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A200C1427D64D7E00CBF02E /* AudioPlayer.swift */; };
 		3A90295F280968E700E1D427 /* PlaybackReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A90295E280968E700E1D427 /* PlaybackReport.swift */; };
@@ -21,6 +28,7 @@
 		3AF1970C2806E2590096F747 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF1970B2806E2590096F747 /* ApiClient.swift */; };
 		3AF1970E2806E3CA0096F747 /* AbsAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF1970D2806E3CA0096F747 /* AbsAudioPlayer.swift */; };
 		3AFCB5E827EA240D00ECCC05 /* NowPlayingInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFCB5E727EA240D00ECCC05 /* NowPlayingInfo.swift */; };
+		4228E1CFCD6157FE4726A049 /* AudiobookshelfWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FD354AFC1BE61F02A2145B13 /* AudiobookshelfWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4D66B954282EE87C008272D4 /* AbsDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66B953282EE87C008272D4 /* AbsDownloader.swift */; };
 		4D66B958282EEA14008272D4 /* AbsFileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66B957282EEA14008272D4 /* AbsFileSystem.swift */; };
 		4D91EEC62A40F28D004807ED /* EBookFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D91EEC52A40F28D004807ED /* EBookFile.swift */; };
@@ -37,6 +45,12 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		65643F4DAA661FB0B247247E /* Pods_Audiobookshelf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F9A7CCC479333E44DC314BE /* Pods_Audiobookshelf.framework */; };
 		6F2516272E68DA3000F40541 /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2516262E68DA3000F40541 /* LogEntry.swift */; };
+		74EEFD8D06B101CCE8399642 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A3C7B9A4A4629E8659364A /* Components.swift */; };
+		82960F123F861B638BF7856F /* SpikePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB51A24C61150026F872875 /* SpikePlayer.swift */; };
+		87877F44875CDD03DF1F3A13 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E990F0283C0051D2CBE4CFEF /* RootView.swift */; };
+		8BBA8E138FCDA728638E11A2 /* AbsWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = A44428CA9D48FE271EA1424A /* AbsWatchCore */; };
+		8F17CE1FC1A1C068F8D77D73 /* SpikeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B40C9139BB750A4DE6EBCA /* SpikeModel.swift */; };
+		A5CF990E2918C4FB7365748B /* DeviceIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39423AD209761B78729BEA91 /* DeviceIdentity.swift */; };
 		AA00020100000000000E0001 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0001 /* CarPlaySceneDelegate.swift */; };
 		AA00020100000000000E0002 /* CarPlayContinueListeningProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0002 /* CarPlayContinueListeningProvider.swift */; };
 		AA00020100000000000E0003 /* CarPlayLibraryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0003 /* CarPlayLibraryProvider.swift */; };
@@ -45,6 +59,10 @@
 		AA00020100000000000E0006 /* CarPlayImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0006 /* CarPlayImageLoader.swift */; };
 		AA00020100000000000E0007 /* CarPlayAPIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0007 /* CarPlayAPIModels.swift */; };
 		AA00020100000000000E0009 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0009 /* SceneDelegate.swift */; };
+		B4EA90DD784FF2A6D149FDCB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00728EFAF7B08DA21658F5D /* SettingsView.swift */; };
+		B84EE6378CCC47EFEB94FD98 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 98B055CC1C6AEA0870736F8A /* Foundation.framework */; };
+		D87F5798E782214A0E6D6CB5 /* NowPlayingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0884C9F6BFD229A1C92880EE /* NowPlayingScreen.swift */; };
+		E8A0BD76344AAB4ED54DFD24 /* SpikeLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500404858D8112F54A6177EE /* SpikeLog.swift */; };
 		E9D5504628AC1A3900C746DD /* LibraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D5504528AC1A3900C746DD /* LibraryItem.swift */; };
 		E9D5504828AC1A7A00C746DD /* MediaType.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D5504728AC1A7A00C746DD /* MediaType.swift */; };
 		E9D5504A28AC1AA600C746DD /* Metadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D5504928AC1AA600C746DD /* Metadata.swift */; };
@@ -76,6 +94,8 @@
 		EACB38122BCCA1330060DA4A /* AudioPlayerRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACB38112BCCA1330060DA4A /* AudioPlayerRateManager.swift */; };
 		EACB38142BCCA1410060DA4A /* LegacyAudioPlayerRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACB38132BCCA1410060DA4A /* LegacyAudioPlayerRateManager.swift */; };
 		EACB38162BCCA1500060DA4A /* DefaultedAudioPlayerRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACB38152BCCA1500060DA4A /* DefaultedAudioPlayerRateManager.swift */; };
+		EC5A0BC86569D1DE505EF4AA /* PhoneLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE20D87D97A44F0802B24DDA /* PhoneLink.swift */; };
+		EC94499CCA85D59E89540AD0 /* WatchPairingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BF70D748D2BEC800D077A8 /* WatchPairingService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,10 +106,38 @@
 			remoteGlobalIDString = 504EC3031FED79650016851F;
 			remoteInfo = Audiobookshelf;
 		};
+		FAD3CC5A5AE55AEA1C13353F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9B1ACA853A93DB583655A4C6;
+			remoteInfo = AudiobookshelfWatch;
+		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		F9C308AAF01721F16908D123 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				4228E1CFCD6157FE4726A049 /* AudiobookshelfWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		05A3C7B9A4A4629E8659364A /* Components.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		0884C9F6BFD229A1C92880EE /* NowPlayingScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowPlayingScreen.swift; sourceTree = "<group>"; };
+		16BF70D748D2BEC800D077A8 /* WatchPairingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchPairingService.swift; sourceTree = "<group>"; };
+		1F43DD6FA915B55E9C3562C7 /* BrowseViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BrowseViews.swift; sourceTree = "<group>"; };
+		2080A6A586551FC0E93B872A /* AudiobookshelfWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudiobookshelfWatchApp.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
+		325B9BEE4CADC7286C80BAB4 /* RangeDownloader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RangeDownloader.swift; sourceTree = "<group>"; };
+		39423AD209761B78729BEA91 /* DeviceIdentity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceIdentity.swift; sourceTree = "<group>"; };
 		3A200C1427D64D7E00CBF02E /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		3A90295E280968E700E1D427 /* PlaybackReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackReport.swift; sourceTree = "<group>"; };
 		3AB34052280829BF0039308B /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
@@ -103,6 +151,8 @@
 		3AF1970B2806E2590096F747 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 		3AF1970D2806E3CA0096F747 /* AbsAudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsAudioPlayer.swift; sourceTree = "<group>"; };
 		3AFCB5E727EA240D00ECCC05 /* NowPlayingInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingInfo.swift; sourceTree = "<group>"; };
+		3F24EA1B36D67CD650327605 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		3FB51A24C61150026F872875 /* SpikePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpikePlayer.swift; sourceTree = "<group>"; };
 		4D66B953282EE87C008272D4 /* AbsDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsDownloader.swift; sourceTree = "<group>"; };
 		4D66B957282EEA14008272D4 /* AbsFileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsFileSystem.swift; sourceTree = "<group>"; };
 		4D8D412C26E187E400BA5F0D /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -112,6 +162,7 @@
 		4DF6C7162DB58ABF004059F1 /* AbsLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsLogger.swift; sourceTree = "<group>"; };
 		4DF74911287105C600AC7814 /* DeviceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSettings.swift; sourceTree = "<group>"; };
 		4DFE2DA22D345C390000B204 /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
+		500404858D8112F54A6177EE /* SpikeLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpikeLog.swift; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* Audiobookshelf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Audiobookshelf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -120,8 +171,12 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		55F9D8BB2030ED98A948E64E /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6F2516262E68DA3000F40541 /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntry.swift; sourceTree = "<group>"; };
+		767515B5419DA903189B56A7 /* DebugViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DebugViews.swift; sourceTree = "<group>"; };
 		8F9A7CCC479333E44DC314BE /* Pods_Audiobookshelf.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Audiobookshelf.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		90B40C9139BB750A4DE6EBCA /* SpikeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpikeModel.swift; sourceTree = "<group>"; };
+		98B055CC1C6AEA0870736F8A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		AA00010100000000000E0001 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		AA00010100000000000E0002 /* CarPlayContinueListeningProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayContinueListeningProvider.swift; sourceTree = "<group>"; };
 		AA00010100000000000E0003 /* CarPlayLibraryProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayLibraryProvider.swift; sourceTree = "<group>"; };
@@ -132,7 +187,10 @@
 		AA00010100000000000E0008 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		AA00010100000000000E0009 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		BE96D57E131924D520D57057 /* Pods-Audiobookshelf.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Audiobookshelf.debug.xcconfig"; path = "Target Support Files/Pods-Audiobookshelf/Pods-Audiobookshelf.debug.xcconfig"; sourceTree = "<group>"; };
+		C00728EFAF7B08DA21658F5D /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CE20D87D97A44F0802B24DDA /* PhoneLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhoneLink.swift; sourceTree = "<group>"; };
 		D2F7F575384A63F1C47DE984 /* Pods-Audiobookshelf.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Audiobookshelf.release.xcconfig"; path = "Target Support Files/Pods-Audiobookshelf/Pods-Audiobookshelf.release.xcconfig"; sourceTree = "<group>"; };
+		E990F0283C0051D2CBE4CFEF /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		E9D5504528AC1A3900C746DD /* LibraryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryItem.swift; sourceTree = "<group>"; };
 		E9D5504728AC1A7A00C746DD /* MediaType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaType.swift; sourceTree = "<group>"; };
 		E9D5504928AC1AA600C746DD /* Metadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Metadata.swift; sourceTree = "<group>"; };
@@ -165,6 +223,9 @@
 		EACB38112BCCA1330060DA4A /* AudioPlayerRateManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioPlayerRateManager.swift; sourceTree = "<group>"; };
 		EACB38132BCCA1410060DA4A /* LegacyAudioPlayerRateManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LegacyAudioPlayerRateManager.swift; sourceTree = "<group>"; };
 		EACB38152BCCA1500060DA4A /* DefaultedAudioPlayerRateManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultedAudioPlayerRateManager.swift; sourceTree = "<group>"; };
+		F0D5B0F5761F7AEE20BAB252 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FD354AFC1BE61F02A2145B13 /* AudiobookshelfWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AudiobookshelfWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FEF5EFCAE497A67DDA671FFD /* PlayerController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlayerController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +244,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EF43B456A31D7171920E3DC4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B84EE6378CCC47EFEB94FD98 /* Foundation.framework in Frameworks */,
+				8BBA8E138FCDA728638E11A2 /* AbsWatchCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -190,8 +260,18 @@
 			isa = PBXGroup;
 			children = (
 				8F9A7CCC479333E44DC314BE /* Pods_Audiobookshelf.framework */,
+				61CA93773FE98836B9555998 /* watchOS */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		23B381C13EE255128DB92387 /* Watch */ = {
+			isa = PBXGroup;
+			children = (
+				16BF70D748D2BEC800D077A8 /* WatchPairingService.swift */,
+			);
+			name = Watch;
+			path = Watch;
 			sourceTree = "<group>";
 		};
 		39E576BF5B2DD22C4195A799 /* Pods */ = {
@@ -283,6 +363,7 @@
 				504EC3051FED79650016851F /* Products */,
 				39E576BF5B2DD22C4195A799 /* Pods */,
 				2372704BEF15C94CF4EBDB08 /* Frameworks */,
+				CC77FA620E492BB139E8B547 /* AudiobookshelfWatch */,
 			);
 			sourceTree = "<group>";
 		};
@@ -291,6 +372,7 @@
 			children = (
 				504EC3041FED79650016851F /* Audiobookshelf.app */,
 				E9E8813A28DA5DE500D750C1 /* AudiobookshelfUnitTests.xctest */,
+				FD354AFC1BE61F02A2145B13 /* AudiobookshelfWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -312,8 +394,17 @@
 				50B271D01FEDC1A000F3C39B /* public */,
 				4D8D412C26E187E400BA5F0D /* App-Bridging-Header.h */,
 				4DFE2DA22D345C390000B204 /* MyViewController.swift */,
+				23B381C13EE255128DB92387 /* Watch */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		61CA93773FE98836B9555998 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				98B055CC1C6AEA0870736F8A /* Foundation.framework */,
+			);
+			name = watchOS;
 			sourceTree = "<group>";
 		};
 		AA00030100000000000E0001 /* CarPlay */ = {
@@ -328,6 +419,31 @@
 				AA00010100000000000E0007 /* CarPlayAPIModels.swift */,
 			);
 			path = CarPlay;
+			sourceTree = "<group>";
+		};
+		CC77FA620E492BB139E8B547 /* AudiobookshelfWatch */ = {
+			isa = PBXGroup;
+			children = (
+				2080A6A586551FC0E93B872A /* AudiobookshelfWatchApp.swift */,
+				39423AD209761B78729BEA91 /* DeviceIdentity.swift */,
+				CE20D87D97A44F0802B24DDA /* PhoneLink.swift */,
+				325B9BEE4CADC7286C80BAB4 /* RangeDownloader.swift */,
+				500404858D8112F54A6177EE /* SpikeLog.swift */,
+				90B40C9139BB750A4DE6EBCA /* SpikeModel.swift */,
+				3FB51A24C61150026F872875 /* SpikePlayer.swift */,
+				55F9D8BB2030ED98A948E64E /* Assets.xcassets */,
+				F0D5B0F5761F7AEE20BAB252 /* Info.plist */,
+				3F24EA1B36D67CD650327605 /* AppModel.swift */,
+				1F43DD6FA915B55E9C3562C7 /* BrowseViews.swift */,
+				05A3C7B9A4A4629E8659364A /* Components.swift */,
+				767515B5419DA903189B56A7 /* DebugViews.swift */,
+				0884C9F6BFD229A1C92880EE /* NowPlayingScreen.swift */,
+				FEF5EFCAE497A67DDA671FFD /* PlayerController.swift */,
+				E990F0283C0051D2CBE4CFEF /* RootView.swift */,
+				C00728EFAF7B08DA21658F5D /* SettingsView.swift */,
+			);
+			name = AudiobookshelfWatch;
+			path = ../Watch/AudiobookshelfWatch;
 			sourceTree = "<group>";
 		};
 		E9D5506328AC1D3F00C746DD /* server */ = {
@@ -424,14 +540,36 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				CEB30CA5B985BAFB7ABA9E2F /* [CP] Embed Pods Frameworks */,
+				F9C308AAF01721F16908D123 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9574AE4098687FB4F9FC03A5 /* PBXTargetDependency */,
+			);
+			name = Audiobookshelf;
+			productName = App;
+			productReference = 504EC3041FED79650016851F /* Audiobookshelf.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9B1ACA853A93DB583655A4C6 /* AudiobookshelfWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2ED8F16F4BEA93269F7034CE /* Build configuration list for PBXNativeTarget "AudiobookshelfWatch" */;
+			buildPhases = (
+				E8155EDC248A0A153DE86E5E /* Sources */,
+				EF43B456A31D7171920E3DC4 /* Frameworks */,
+				BF3E69CB5FDC21F412D09077 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = Audiobookshelf;
-			productName = App;
-			productReference = 504EC3041FED79650016851F /* Audiobookshelf.app */;
+			name = AudiobookshelfWatch;
+			packageProductDependencies = (
+				A44428CA9D48FE271EA1424A /* AbsWatchCore */,
+			);
+			productName = AudiobookshelfWatch;
+			productReference = FD354AFC1BE61F02A2145B13 /* AudiobookshelfWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 		E9E8813928DA5DE500D750C1 /* AudiobookshelfUnitTests */ = {
@@ -482,12 +620,16 @@
 				Base,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
+			packageReferences = (
+				4B80F8C1B583A3A048E4DE99 /* XCLocalSwiftPackageReference "AbsWatchCore" */,
+			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* Audiobookshelf */,
 				E9E8813928DA5DE500D750C1 /* AudiobookshelfUnitTests */,
+				9B1ACA853A93DB583655A4C6 /* AudiobookshelfWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -503,6 +645,14 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF3E69CB5FDC21F412D09077 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C5FFBEE44DD9FCF3D614760 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -621,6 +771,29 @@
 				AA00020100000000000E0005 /* CarPlayPlaybackManager.swift in Sources */,
 				AA00020100000000000E0006 /* CarPlayImageLoader.swift in Sources */,
 				AA00020100000000000E0007 /* CarPlayAPIModels.swift in Sources */,
+				EC94499CCA85D59E89540AD0 /* WatchPairingService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8155EDC248A0A153DE86E5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				05FD4C20288522470E82C7A6 /* AudiobookshelfWatchApp.swift in Sources */,
+				A5CF990E2918C4FB7365748B /* DeviceIdentity.swift in Sources */,
+				EC5A0BC86569D1DE505EF4AA /* PhoneLink.swift in Sources */,
+				2087590FF7B3EF1E0D202B7C /* RangeDownloader.swift in Sources */,
+				E8A0BD76344AAB4ED54DFD24 /* SpikeLog.swift in Sources */,
+				8F17CE1FC1A1C068F8D77D73 /* SpikeModel.swift in Sources */,
+				82960F123F861B638BF7856F /* SpikePlayer.swift in Sources */,
+				119FBA47B41670AB07ECE814 /* AppModel.swift in Sources */,
+				0C17817F3B3E450F09C959BC /* BrowseViews.swift in Sources */,
+				74EEFD8D06B101CCE8399642 /* Components.swift in Sources */,
+				04C4F468DE67252BD470F2D0 /* DebugViews.swift in Sources */,
+				D87F5798E782214A0E6D6CB5 /* NowPlayingScreen.swift in Sources */,
+				0029755BE6898C3EAFC865FD /* PlayerController.swift in Sources */,
+				87877F44875CDD03DF1F3A13 /* RootView.swift in Sources */,
+				B4EA90DD784FF2A6D149FDCB /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -635,6 +808,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		9574AE4098687FB4F9FC03A5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = AudiobookshelfWatch;
+			target = 9B1ACA853A93DB583655A4C6 /* AudiobookshelfWatch */;
+			targetProxy = FAD3CC5A5AE55AEA1C13353F /* PBXContainerItemProxy */;
+		};
 		E9E8813F28DA5DE500D750C1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 504EC3031FED79650016851F /* Audiobookshelf */;
@@ -662,6 +841,34 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		0425DC275846C4C72B8CA8EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ABS_COMPANION_BUNDLE_ID = kw.audiobookshelf.app;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 49;
+				DEVELOPMENT_TEAM = XM4N953GC3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ../Watch/AudiobookshelfWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.14.2;
+				PRODUCT_BUNDLE_IDENTIFIER = kw.audiobookshelf.app.watchkitapp;
+				PRODUCT_NAME = AudiobookshelfWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
 		504EC3141FED79650016851F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -783,11 +990,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = XM4N953GC3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 0.14.2;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = kw.audiobookshelf.app.dev;
@@ -808,11 +1018,14 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 48;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = XM4N953GC3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 0.14.2;
 				PRODUCT_BUNDLE_IDENTIFIER = kw.audiobookshelf.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -822,6 +1035,33 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		B17AF6C507200BAF7155982A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ABS_COMPANION_BUNDLE_ID = kw.audiobookshelf.app.dev;
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 49;
+				DEVELOPMENT_TEAM = XM4N953GC3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ../Watch/AudiobookshelfWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.14.2;
+				PRODUCT_BUNDLE_IDENTIFIER = kw.audiobookshelf.app.dev.watchkitapp;
+				PRODUCT_NAME = AudiobookshelfWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
 		};
 		E9E8814028DA5DE500D750C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -869,6 +1109,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		2ED8F16F4BEA93269F7034CE /* Build configuration list for PBXNativeTarget "AudiobookshelfWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0425DC275846C4C72B8CA8EB /* Release */,
+				B17AF6C507200BAF7155982A /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -897,6 +1146,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		4B80F8C1B583A3A048E4DE99 /* XCLocalSwiftPackageReference "AbsWatchCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Watch/AbsWatchCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A44428CA9D48FE271EA1424A /* AbsWatchCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4B80F8C1B583A3A048E4DE99 /* XCLocalSwiftPackageReference "AbsWatchCore" */;
+			productName = AbsWatchCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 504EC2FC1FED79650016851F /* Project object */;
 }

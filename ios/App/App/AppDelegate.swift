@@ -97,6 +97,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // CarPlay requires this to be active before CPNowPlayingTemplate is pushed.
         UIApplication.shared.beginReceivingRemoteControlEvents()
 
+        // Answers pairing requests from the watch app
+        WatchPairingService.shared.activate()
+
         return true
     }
 
