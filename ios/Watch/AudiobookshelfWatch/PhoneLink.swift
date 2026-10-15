@@ -42,6 +42,6 @@ final class PhoneLink: NSObject, WCSessionDelegate, @unchecked Sendable {
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        if let error { SpikeLog.post("phone link activation failed: \(error.localizedDescription)") }
+        if let error { AppLog.post("phone link activation failed: \(error.localizedDescription)") }
     }
 }

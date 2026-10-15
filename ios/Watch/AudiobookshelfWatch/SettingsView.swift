@@ -16,14 +16,16 @@ struct SettingsView: View {
                     Button("Sign out", role: .destructive) { confirmSignOut = true }
                 }
             }
+            Section {
+                NavigationLink(value: Route.downloads) { Label("Downloads", systemImage: "arrow.down.circle") }
+            }
             Section("Diagnostics") {
                 NavigationLink(value: Route.log) { Label("Log", systemImage: "doc.plaintext") }
-                NavigationLink(value: Route.debug) { Label("Spike tests", systemImage: "wrench.and.screwdriver") }
                 LabeledContent("Version", value: DeviceIdentity.appVersion)
             }
         }
         .navigationTitle("Settings")
-        .confirmationDialog("Sign out this watch? You can pair it again with the iPhone.", isPresented: $confirmSignOut) {
+        .confirmationDialog("Sign out this watch? Downloads are removed too. You can pair it again with the iPhone.", isPresented: $confirmSignOut) {
             Button("Sign out", role: .destructive) {
                 Task {
                     await app.signOut()

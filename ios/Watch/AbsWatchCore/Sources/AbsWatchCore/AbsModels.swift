@@ -63,13 +63,22 @@ public struct Episode: Decodable, Sendable, Identifiable, Hashable {
     public let title: String?
     public let duration: Double?
     public let publishedAt: Double?
+    /// Only in expanded items
+    public let audioTrack: AudioTrack?
 }
 
-public struct Chapter: Decodable, Sendable, Identifiable, Hashable {
+public struct Chapter: Codable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let start: Double
     public let end: Double
     public let title: String
+
+    public init(id: Int, start: Double, end: Double, title: String) {
+        self.id = id
+        self.start = start
+        self.end = end
+        self.title = title
+    }
 }
 
 /// Expanded library item (`GET /api/items/:id?expanded=1&include=progress`).
@@ -84,6 +93,8 @@ public struct LibraryItemDetail: Decodable, Sendable, Identifiable {
         public let duration: Double?
         public let chapters: [Chapter]?
         public let episodes: [Episode]?
+        /// Books only: the audio files in playback order, with their download URLs
+        public let tracks: [AudioTrack]?
     }
 
     public struct Metadata: Decodable, Sendable {
@@ -146,7 +157,7 @@ public struct PlaybackSession: Decodable, Sendable {
     }
 }
 
-public struct AudioTrack: Decodable, Sendable, Hashable {
+public struct AudioTrack: Codable, Sendable, Hashable {
     public let index: Int
     public let startOffset: Double
     public let duration: Double
@@ -155,10 +166,26 @@ public struct AudioTrack: Decodable, Sendable, Hashable {
     public let mimeType: String?
     public let metadata: FileMetadata?
 
-    public struct FileMetadata: Decodable, Sendable, Hashable {
+    public struct FileMetadata: Codable, Sendable, Hashable {
         public let filename: String?
         public let ext: String?
         public let size: Int64?
+
+        public init(filename: String?, ext: String?, size: Int64?) {
+            self.filename = filename
+            self.ext = ext
+            self.size = size
+        }
+    }
+
+    public init(index: Int, startOffset: Double, duration: Double, title: String?, contentUrl: String, mimeType: String?, metadata: FileMetadata?) {
+        self.index = index
+        self.startOffset = startOffset
+        self.duration = duration
+        self.title = title
+        self.contentUrl = contentUrl
+        self.mimeType = mimeType
+        self.metadata = metadata
     }
 
     public var ext: String {

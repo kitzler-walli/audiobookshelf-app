@@ -4,8 +4,22 @@ import SwiftUI
 struct RootView: View {
     private let app = AppModel.shared
     @Bindable private var router = Router.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
+        content
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                DownloadManager.shared.appStateChanged(isActive: phase == .active)
+                guard phase == .active, app.isPaired else { return }
+                Task {
+                    await app.uploadPendingSessions()
+                    await DownloadManager.shared.resumeAll()
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if app.isPaired {
             NavigationStack(path: $router.path) {
                 HomeView()
@@ -17,7 +31,7 @@ struct RootView: View {
                         case .nowPlaying: NowPlayingScreen()
                         case .chapters: ChaptersView()
                         case .settings: SettingsView()
-                        case .debug: DebugView()
+                        case .downloads: DownloadsView()
                         case .log: LogView()
                         }
                     }
@@ -60,10 +74,11 @@ struct HomeView: View {
     @State private var loaded = false
     @State private var loadError: String?
     private let player = PlayerController.shared
+    private let downloads = DownloadManager.shared
 
     var body: some View {
         List {
-            if player.session != nil {
+            if player.isActive {
                 Section {
                     NavigationLink(value: Route.nowPlaying) { NowPlayingRow() }
                 }
@@ -78,6 +93,16 @@ struct HomeView: View {
                 ForEach(items) { item in
                     NavigationLink(value: Route.item(id: item.id, episodeId: item.recentEpisode?.id)) {
                         ItemRow(item: item, progress: progress[item.progressKey])
+                    }
+                }
+            }
+
+            if !downloads.items.isEmpty {
+                Section("On this watch") {
+                    ForEach(downloads.items) { item in
+                        NavigationLink(value: Route.item(id: item.libraryItemId, episodeId: item.episodeId)) {
+                            DownloadedRow(item: item)
+                        }
                     }
                 }
             }
@@ -102,8 +127,33 @@ struct HomeView: View {
             loadError = nil
         } catch {
             AppModel.shared.handle(error)
-            if items.isEmpty { loadError = error.localizedDescription }
+            if items.isEmpty { loadError = Self.describe(error) }
         }
         loaded = true
+    }
+
+    /// Offline is normal on a walk; say so instead of showing a URL error.
+    static func describe(_ error: Error) -> String {
+        if let urlError = error as? URLError, [.notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .dataNotAllowed].contains(urlError.code) {
+            return "Offline. Downloaded books are below."
+        }
+        return error.localizedDescription
+    }
+}
+
+struct DownloadedRow: View {
+    let item: DownloadedItem
+
+    var body: some View {
+        HStack(spacing: 8) {
+            CoverImage(libraryItemId: item.libraryItemId)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title).font(.footnote.weight(.semibold)).lineLimit(2)
+                if let position = item.position, position > 0 {
+                    ProgressView(value: min(1, position / max(1, item.duration))).tint(.orange)
+                }
+                DownloadStatusText(item: item)
+            }
+        }
     }
 }

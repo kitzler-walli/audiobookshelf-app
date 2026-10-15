@@ -23,10 +23,15 @@ private struct PlayerControlsPage: View {
                     .font(.headline)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                Text(player.currentChapter != nil ? player.title : (player.author ?? ""))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 3) {
+                    if player.isLocal {
+                        Image(systemName: "arrow.down.circle.fill")
+                    }
+                    Text(player.currentChapter != nil ? player.title : (player.author ?? ""))
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
             }
 
             chapterProgress
@@ -66,7 +71,7 @@ private struct PlayerControlsPage: View {
             }
         }
         .overlay {
-            if player.session == nil && !player.isLoading {
+            if !player.isActive && !player.isLoading {
                 Text("Nothing playing").foregroundStyle(.secondary)
             }
         }

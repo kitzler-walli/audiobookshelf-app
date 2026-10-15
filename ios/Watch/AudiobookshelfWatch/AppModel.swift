@@ -8,6 +8,9 @@ final class AppModel {
     static let shared = AppModel()
 
     private let store = KeychainCredentialStore()
+    /// Listening on downloaded items, waiting for upload
+    let localSessions = LocalSessionStore(directory: URL.applicationSupportDirectory.appending(path: "LocalSessions", directoryHint: .isDirectory))
+    private var isUploading = false
     private(set) var tokens: TokenManager?
     private(set) var credentials: Credentials?
     private(set) var pairingStatus: String?
@@ -34,32 +37,46 @@ final class AppModel {
         do {
             pairingStatus = "Asking iPhone…"
             let grant = try await PhoneLink.shared.requestPairing()
-            SpikeLog.shared.add("iPhone authorized a device code for \(grant.serverAddress.host() ?? "?")")
+            AppLog.shared.add("iPhone authorized a device code for \(grant.serverAddress.host() ?? "?")")
             pairingStatus = "Waiting for server…"
             let credentials = try await DevicePairing.pollForCredentials(grant: grant)
             try store.save(credentials)
             self.credentials = credentials
             tokens = TokenManager(credentials: credentials, store: store)
             pairingStatus = nil
-            SpikeLog.shared.add("paired as \(credentials.username ?? "?") on \(credentials.serverName ?? credentials.serverAddress.absoluteString)")
+            AppLog.shared.add("paired as \(credentials.username ?? "?") on \(credentials.serverName ?? credentials.serverAddress.absoluteString)")
         } catch {
             pairingStatus = error.localizedDescription
-            SpikeLog.shared.add("pairing failed: \(error.localizedDescription)")
+            AppLog.shared.add("pairing failed: \(error.localizedDescription)")
         }
     }
 
+    /// Uploads listening done on downloads, and continues downloads, e.g. when the app comes back online.
+    func uploadPendingSessions() async {
+        guard let client, !isUploading else { return }
+        isUploading = true
+        defer { isUploading = false }
+        let active = PlayerController.shared.localSessionId
+        let uploaded = await localSessions.uploadPending(client: client, model: DeviceIdentity.model, excluding: active)
+        if uploaded > 0 { AppLog.shared.add("uploaded \(uploaded) offline listening session(s)") }
+    }
+
+    /// Downloads belong to this account, so they are removed too. Offline listening is uploaded first if possible.
     func signOut() async {
         await PlayerController.shared.stop()
-        SpikeModel.shared.reset()
+        await uploadPendingSessions()
+        DownloadManager.shared.removeAll()
+        // Whatever could not be uploaded belongs to this account and must not go to the next one
+        for session in localSessions.all() { localSessions.delete(id: session.id) }
         await tokens?.signOut()
         forgetSession()
-        SpikeLog.shared.add("signed out")
+        AppLog.shared.add("signed out")
     }
 
     /// Called when the server rejected the refresh token (30 days unused, password change, logout everywhere).
     func handle(_ error: Error) {
         if case TokenManager.TokenError.signedOut = error {
-            SpikeLog.shared.add("server ended this watch's session")
+            AppLog.shared.add("server ended this watch's session")
             forgetSession()
         }
     }

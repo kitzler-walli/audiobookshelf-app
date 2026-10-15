@@ -8,12 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		0029755BE6898C3EAFC865FD /* PlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF5EFCAE497A67DDA671FFD /* PlayerController.swift */; };
-		04C4F468DE67252BD470F2D0 /* DebugViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767515B5419DA903189B56A7 /* DebugViews.swift */; };
 		05FD4C20288522470E82C7A6 /* AudiobookshelfWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2080A6A586551FC0E93B872A /* AudiobookshelfWatchApp.swift */; };
 		0C17817F3B3E450F09C959BC /* BrowseViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F43DD6FA915B55E9C3562C7 /* BrowseViews.swift */; };
 		119FBA47B41670AB07ECE814 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F24EA1B36D67CD650327605 /* AppModel.swift */; };
 		1C5FFBEE44DD9FCF3D614760 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55F9D8BB2030ED98A948E64E /* Assets.xcassets */; };
-		2087590FF7B3EF1E0D202B7C /* RangeDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 325B9BEE4CADC7286C80BAB4 /* RangeDownloader.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		3A200C1527D64D7E00CBF02E /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A200C1427D64D7E00CBF02E /* AudioPlayer.swift */; };
 		3A90295F280968E700E1D427 /* PlaybackReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A90295E280968E700E1D427 /* PlaybackReport.swift */; };
@@ -29,6 +27,7 @@
 		3AF1970E2806E3CA0096F747 /* AbsAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF1970D2806E3CA0096F747 /* AbsAudioPlayer.swift */; };
 		3AFCB5E827EA240D00ECCC05 /* NowPlayingInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFCB5E727EA240D00ECCC05 /* NowPlayingInfo.swift */; };
 		4228E1CFCD6157FE4726A049 /* AudiobookshelfWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FD354AFC1BE61F02A2145B13 /* AudiobookshelfWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		444E5AC9A19114720A6378B1 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D69D1FB567499B6AD4BB393 /* AppLog.swift */; };
 		4D66B954282EE87C008272D4 /* AbsDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66B953282EE87C008272D4 /* AbsDownloader.swift */; };
 		4D66B958282EEA14008272D4 /* AbsFileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66B957282EEA14008272D4 /* AbsFileSystem.swift */; };
 		4D91EEC62A40F28D004807ED /* EBookFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D91EEC52A40F28D004807ED /* EBookFile.swift */; };
@@ -43,13 +42,14 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		534B16286FD05B6945D9721C /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B15079CC15BA4414F87A57D /* LogView.swift */; };
 		65643F4DAA661FB0B247247E /* Pods_Audiobookshelf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F9A7CCC479333E44DC314BE /* Pods_Audiobookshelf.framework */; };
+		65C2A6E66A3275571A3CD0A8 /* TrackDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DD86BBD579A57CB5AC6A79 /* TrackDownloader.swift */; };
 		6F2516272E68DA3000F40541 /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F2516262E68DA3000F40541 /* LogEntry.swift */; };
+		72CAA4856B05E35ECC1E0B89 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB8489F2C5257DA2E0624912 /* DownloadManager.swift */; };
 		74EEFD8D06B101CCE8399642 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05A3C7B9A4A4629E8659364A /* Components.swift */; };
-		82960F123F861B638BF7856F /* SpikePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB51A24C61150026F872875 /* SpikePlayer.swift */; };
 		87877F44875CDD03DF1F3A13 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E990F0283C0051D2CBE4CFEF /* RootView.swift */; };
 		8BBA8E138FCDA728638E11A2 /* AbsWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = A44428CA9D48FE271EA1424A /* AbsWatchCore */; };
-		8F17CE1FC1A1C068F8D77D73 /* SpikeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B40C9139BB750A4DE6EBCA /* SpikeModel.swift */; };
 		A5CF990E2918C4FB7365748B /* DeviceIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39423AD209761B78729BEA91 /* DeviceIdentity.swift */; };
 		AA00020100000000000E0001 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0001 /* CarPlaySceneDelegate.swift */; };
 		AA00020100000000000E0002 /* CarPlayContinueListeningProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0002 /* CarPlayContinueListeningProvider.swift */; };
@@ -59,10 +59,10 @@
 		AA00020100000000000E0006 /* CarPlayImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0006 /* CarPlayImageLoader.swift */; };
 		AA00020100000000000E0007 /* CarPlayAPIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0007 /* CarPlayAPIModels.swift */; };
 		AA00020100000000000E0009 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00010100000000000E0009 /* SceneDelegate.swift */; };
+		ABA742E2B3CE8C317C4C8E33 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1809F6A071A6576971BA2BD8 /* DownloadsView.swift */; };
 		B4EA90DD784FF2A6D149FDCB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00728EFAF7B08DA21658F5D /* SettingsView.swift */; };
 		B84EE6378CCC47EFEB94FD98 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 98B055CC1C6AEA0870736F8A /* Foundation.framework */; };
 		D87F5798E782214A0E6D6CB5 /* NowPlayingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0884C9F6BFD229A1C92880EE /* NowPlayingScreen.swift */; };
-		E8A0BD76344AAB4ED54DFD24 /* SpikeLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500404858D8112F54A6177EE /* SpikeLog.swift */; };
 		E9D5504628AC1A3900C746DD /* LibraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D5504528AC1A3900C746DD /* LibraryItem.swift */; };
 		E9D5504828AC1A7A00C746DD /* MediaType.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D5504728AC1A7A00C746DD /* MediaType.swift */; };
 		E9D5504A28AC1AA600C746DD /* Metadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D5504928AC1AA600C746DD /* Metadata.swift */; };
@@ -133,10 +133,11 @@
 		05A3C7B9A4A4629E8659364A /* Components.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		0884C9F6BFD229A1C92880EE /* NowPlayingScreen.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowPlayingScreen.swift; sourceTree = "<group>"; };
 		16BF70D748D2BEC800D077A8 /* WatchPairingService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchPairingService.swift; sourceTree = "<group>"; };
+		1809F6A071A6576971BA2BD8 /* DownloadsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
+		1B15079CC15BA4414F87A57D /* LogView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
 		1F43DD6FA915B55E9C3562C7 /* BrowseViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BrowseViews.swift; sourceTree = "<group>"; };
 		2080A6A586551FC0E93B872A /* AudiobookshelfWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AudiobookshelfWatchApp.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
-		325B9BEE4CADC7286C80BAB4 /* RangeDownloader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RangeDownloader.swift; sourceTree = "<group>"; };
 		39423AD209761B78729BEA91 /* DeviceIdentity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceIdentity.swift; sourceTree = "<group>"; };
 		3A200C1427D64D7E00CBF02E /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		3A90295E280968E700E1D427 /* PlaybackReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackReport.swift; sourceTree = "<group>"; };
@@ -152,7 +153,6 @@
 		3AF1970D2806E3CA0096F747 /* AbsAudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsAudioPlayer.swift; sourceTree = "<group>"; };
 		3AFCB5E727EA240D00ECCC05 /* NowPlayingInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingInfo.swift; sourceTree = "<group>"; };
 		3F24EA1B36D67CD650327605 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
-		3FB51A24C61150026F872875 /* SpikePlayer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpikePlayer.swift; sourceTree = "<group>"; };
 		4D66B953282EE87C008272D4 /* AbsDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsDownloader.swift; sourceTree = "<group>"; };
 		4D66B957282EEA14008272D4 /* AbsFileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsFileSystem.swift; sourceTree = "<group>"; };
 		4D8D412C26E187E400BA5F0D /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -162,7 +162,6 @@
 		4DF6C7162DB58ABF004059F1 /* AbsLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbsLogger.swift; sourceTree = "<group>"; };
 		4DF74911287105C600AC7814 /* DeviceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSettings.swift; sourceTree = "<group>"; };
 		4DFE2DA22D345C390000B204 /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
-		500404858D8112F54A6177EE /* SpikeLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpikeLog.swift; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* Audiobookshelf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Audiobookshelf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -173,10 +172,10 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		55F9D8BB2030ED98A948E64E /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6F2516262E68DA3000F40541 /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntry.swift; sourceTree = "<group>"; };
-		767515B5419DA903189B56A7 /* DebugViews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DebugViews.swift; sourceTree = "<group>"; };
+		84DD86BBD579A57CB5AC6A79 /* TrackDownloader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrackDownloader.swift; sourceTree = "<group>"; };
 		8F9A7CCC479333E44DC314BE /* Pods_Audiobookshelf.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Audiobookshelf.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		90B40C9139BB750A4DE6EBCA /* SpikeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpikeModel.swift; sourceTree = "<group>"; };
 		98B055CC1C6AEA0870736F8A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		9D69D1FB567499B6AD4BB393 /* AppLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		AA00010100000000000E0001 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		AA00010100000000000E0002 /* CarPlayContinueListeningProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayContinueListeningProvider.swift; sourceTree = "<group>"; };
 		AA00010100000000000E0003 /* CarPlayLibraryProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayLibraryProvider.swift; sourceTree = "<group>"; };
@@ -186,6 +185,7 @@
 		AA00010100000000000E0007 /* CarPlayAPIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlayAPIModels.swift; sourceTree = "<group>"; };
 		AA00010100000000000E0008 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		AA00010100000000000E0009 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		AB8489F2C5257DA2E0624912 /* DownloadManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
 		BE96D57E131924D520D57057 /* Pods-Audiobookshelf.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Audiobookshelf.debug.xcconfig"; path = "Target Support Files/Pods-Audiobookshelf/Pods-Audiobookshelf.debug.xcconfig"; sourceTree = "<group>"; };
 		C00728EFAF7B08DA21658F5D /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CE20D87D97A44F0802B24DDA /* PhoneLink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhoneLink.swift; sourceTree = "<group>"; };
@@ -427,20 +427,20 @@
 				2080A6A586551FC0E93B872A /* AudiobookshelfWatchApp.swift */,
 				39423AD209761B78729BEA91 /* DeviceIdentity.swift */,
 				CE20D87D97A44F0802B24DDA /* PhoneLink.swift */,
-				325B9BEE4CADC7286C80BAB4 /* RangeDownloader.swift */,
-				500404858D8112F54A6177EE /* SpikeLog.swift */,
-				90B40C9139BB750A4DE6EBCA /* SpikeModel.swift */,
-				3FB51A24C61150026F872875 /* SpikePlayer.swift */,
 				55F9D8BB2030ED98A948E64E /* Assets.xcassets */,
 				F0D5B0F5761F7AEE20BAB252 /* Info.plist */,
 				3F24EA1B36D67CD650327605 /* AppModel.swift */,
 				1F43DD6FA915B55E9C3562C7 /* BrowseViews.swift */,
 				05A3C7B9A4A4629E8659364A /* Components.swift */,
-				767515B5419DA903189B56A7 /* DebugViews.swift */,
 				0884C9F6BFD229A1C92880EE /* NowPlayingScreen.swift */,
 				FEF5EFCAE497A67DDA671FFD /* PlayerController.swift */,
 				E990F0283C0051D2CBE4CFEF /* RootView.swift */,
 				C00728EFAF7B08DA21658F5D /* SettingsView.swift */,
+				9D69D1FB567499B6AD4BB393 /* AppLog.swift */,
+				AB8489F2C5257DA2E0624912 /* DownloadManager.swift */,
+				1809F6A071A6576971BA2BD8 /* DownloadsView.swift */,
+				1B15079CC15BA4414F87A57D /* LogView.swift */,
+				84DD86BBD579A57CB5AC6A79 /* TrackDownloader.swift */,
 			);
 			name = AudiobookshelfWatch;
 			path = ../Watch/AudiobookshelfWatch;
@@ -782,18 +782,18 @@
 				05FD4C20288522470E82C7A6 /* AudiobookshelfWatchApp.swift in Sources */,
 				A5CF990E2918C4FB7365748B /* DeviceIdentity.swift in Sources */,
 				EC5A0BC86569D1DE505EF4AA /* PhoneLink.swift in Sources */,
-				2087590FF7B3EF1E0D202B7C /* RangeDownloader.swift in Sources */,
-				E8A0BD76344AAB4ED54DFD24 /* SpikeLog.swift in Sources */,
-				8F17CE1FC1A1C068F8D77D73 /* SpikeModel.swift in Sources */,
-				82960F123F861B638BF7856F /* SpikePlayer.swift in Sources */,
 				119FBA47B41670AB07ECE814 /* AppModel.swift in Sources */,
 				0C17817F3B3E450F09C959BC /* BrowseViews.swift in Sources */,
 				74EEFD8D06B101CCE8399642 /* Components.swift in Sources */,
-				04C4F468DE67252BD470F2D0 /* DebugViews.swift in Sources */,
 				D87F5798E782214A0E6D6CB5 /* NowPlayingScreen.swift in Sources */,
 				0029755BE6898C3EAFC865FD /* PlayerController.swift in Sources */,
 				87877F44875CDD03DF1F3A13 /* RootView.swift in Sources */,
 				B4EA90DD784FF2A6D149FDCB /* SettingsView.swift in Sources */,
+				444E5AC9A19114720A6378B1 /* AppLog.swift in Sources */,
+				72CAA4856B05E35ECC1E0B89 /* DownloadManager.swift in Sources */,
+				ABA742E2B3CE8C317C4C8E33 /* DownloadsView.swift in Sources */,
+				534B16286FD05B6945D9721C /* LogView.swift in Sources */,
+				65C2A6E66A3275571A3CD0A8 /* TrackDownloader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -849,7 +849,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 49;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = XM4N953GC3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ../Watch/AudiobookshelfWatch/Info.plist;
@@ -990,7 +990,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 49;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = XM4N953GC3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -1018,7 +1018,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 49;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = XM4N953GC3;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -1044,7 +1044,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 49;
+				CURRENT_PROJECT_VERSION = 52;
 				DEVELOPMENT_TEAM = XM4N953GC3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ../Watch/AudiobookshelfWatch/Info.plist;

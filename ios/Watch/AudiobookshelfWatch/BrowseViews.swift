@@ -101,7 +101,16 @@ struct ItemDetailView: View {
 
     @State private var item: LibraryItemDetail?
     @State private var loadError: String?
+    @State private var downloadError: String?
+    @State private var showDownloadOptions = false
+    @State private var confirmRemove = false
     private let player = PlayerController.shared
+    private let downloads = DownloadManager.shared
+
+    /// The download of this book (or of the opened episode)
+    private var downloaded: DownloadedItem? {
+        downloads.item(libraryItemId: libraryItemId, episodeId: episodeId)
+    }
 
     var body: some View {
         List {
@@ -111,21 +120,38 @@ struct ItemDetailView: View {
                     episodes(item)
                 } else {
                     playButton(item)
-                    chapters(item)
+                    downloadSection(item)
+                    chapters(item.media.chapters ?? []) { await play(startTime: $0) }
                     if let description = item.media.metadata.descriptionPlain, !description.isEmpty {
                         Section("About") {
                             Text(description).font(.footnote).lineLimit(8)
                         }
                     }
                 }
+            } else if let downloaded, loadError != nil {
+                offlineDetail(downloaded)
             } else if let loadError {
                 Text(loadError).font(.footnote).foregroundStyle(.secondary)
             } else {
                 ProgressView()
             }
         }
-        .navigationTitle(item?.title ?? "")
+        .navigationTitle(item?.title ?? downloaded?.title ?? "")
         .task { await load() }
+        .confirmationDialog("Download to this watch", isPresented: $showDownloadOptions) {
+            if let item {
+                Button("Whole book (\(ByteCountFormatter.string(fromByteCount: totalBytes(item), countStyle: .file)))") { startDownload(item, scope: .full) }
+                Button("Next 2 hours") { startDownload(item, scope: .ahead(seconds: 7200)) }
+                Button("Next hour") { startDownload(item, scope: .ahead(seconds: 3600)) }
+            }
+        } message: {
+            Text("\"Next\" keeps the coming hours downloaded and moves along while you listen.")
+        }
+        .confirmationDialog("Remove the download from this watch?", isPresented: $confirmRemove) {
+            Button("Remove", role: .destructive) {
+                if let downloaded { downloads.remove(downloaded.id) }
+            }
+        }
     }
 
     private func load() async {
@@ -134,7 +160,79 @@ struct ItemDetailView: View {
             item = try await client.item(id: libraryItemId, episodeId: episodeId)
         } catch {
             AppModel.shared.handle(error)
-            loadError = error.localizedDescription
+            loadError = HomeView.describe(error)
+        }
+    }
+
+    /// Without a connection: what the download knows.
+    @ViewBuilder
+    private func offlineDetail(_ downloaded: DownloadedItem) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 4) {
+                CoverImage(libraryItemId: downloaded.libraryItemId, size: 90)
+                    .frame(maxWidth: .infinity)
+                Text(downloaded.title).font(.headline).lineLimit(3)
+                if let author = downloaded.author {
+                    Text(author).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            .listRowBackground(Color.clear)
+        }
+        Section {
+            Button {
+                Task { await play(startTime: nil) }
+            } label: {
+                Label(player.libraryItemId == downloaded.libraryItemId ? "Continue" : "Play", systemImage: "play.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .tint(.orange)
+            .disabled(player.isLoading)
+            if let position = downloaded.position, position > 0 {
+                Text("\(TimeText.duration(max(0, downloaded.duration - position))) left").font(.caption2).foregroundStyle(.secondary)
+            }
+            DownloadStatusText(item: downloaded)
+            if let error = player.errorMessage {
+                Text(error).font(.caption2).foregroundStyle(.red)
+            }
+        }
+        chapters(downloaded.chapters) { await play(startTime: $0) }
+    }
+
+    private func totalBytes(_ item: LibraryItemDetail) -> Int64 {
+        (item.media.tracks ?? []).reduce(0) { $0 + ($1.metadata?.size ?? 0) }
+    }
+
+    private func startDownload(_ item: LibraryItemDetail, episode: Episode? = nil, scope: DownloadScope) {
+        downloadError = nil
+        Task {
+            do {
+                try await downloads.download(item, episode: episode, scope: scope)
+            } catch {
+                downloadError = error.localizedDescription
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func downloadSection(_ item: LibraryItemDetail) -> some View {
+        Section {
+            if let downloaded {
+                DownloadStatusText(item: downloaded)
+                if let status = downloads.status[downloaded.id], !status.isComplete {
+                    ProgressView(value: status.fraction).tint(.orange)
+                }
+                Button("Remove download", role: .destructive) { confirmRemove = true }
+            } else {
+                Button {
+                    showDownloadOptions = true
+                } label: {
+                    Label("Download", systemImage: "arrow.down.circle")
+                }
+                .disabled((item.media.tracks ?? []).isEmpty)
+            }
+            if let downloadError {
+                Text(downloadError).font(.caption2).foregroundStyle(.red)
+            }
         }
     }
 
@@ -165,7 +263,7 @@ struct ItemDetailView: View {
         let isCurrent = player.libraryItemId == item.id
         Section {
             Button {
-                Task { await play(item, startTime: nil) }
+                Task { await play(startTime: nil) }
             } label: {
                 Label(playTitle(progress: progress, isCurrent: isCurrent), systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
@@ -195,12 +293,12 @@ struct ItemDetailView: View {
     }
 
     @ViewBuilder
-    private func chapters(_ item: LibraryItemDetail) -> some View {
-        if let chapters = item.media.chapters, chapters.count > 1 {
+    private func chapters(_ chapters: [Chapter], play: @escaping (Double) async -> Void) -> some View {
+        if chapters.count > 1 {
             Section("Chapters") {
                 ForEach(chapters) { chapter in
                     Button {
-                        Task { await play(item, startTime: chapter.start) }
+                        Task { await play(chapter.start) }
                     } label: {
                         HStack {
                             Text(chapter.title).font(.footnote).lineLimit(2)
@@ -217,24 +315,38 @@ struct ItemDetailView: View {
     private func episodes(_ item: LibraryItemDetail) -> some View {
         Section("Episodes") {
             ForEach(item.episodes) { episode in
+                let download = downloads.item(libraryItemId: item.id, episodeId: episode.id)
                 Button {
-                    Task { await play(item, episodeId: episode.id, startTime: nil) }
+                    Task { await play(episodeId: episode.id, startTime: nil) }
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title ?? "Episode").font(.footnote).lineLimit(2)
-                        if let duration = episode.duration {
+                        if let download {
+                            DownloadStatusText(item: download)
+                        } else if let duration = episode.duration {
                             Text(TimeText.duration(duration)).font(.caption2).foregroundStyle(.secondary)
                         }
                     }
                 }
+                .swipeActions {
+                    if let download {
+                        Button(role: .destructive) { downloads.remove(download.id) } label: { Label("Remove", systemImage: "trash") }
+                    } else if episode.audioTrack != nil {
+                        Button { startDownload(item, episode: episode, scope: .full) } label: { Label("Download", systemImage: "arrow.down.circle") }
+                            .tint(.orange)
+                    }
+                }
+            }
+            if let downloadError {
+                Text(downloadError).font(.caption2).foregroundStyle(.red)
             }
         }
     }
 
-    private func play(_ item: LibraryItemDetail, episodeId: String? = nil, startTime: Double?) async {
+    private func play(episodeId: String? = nil, startTime: Double?) async {
         guard let client = AppModel.shared.client else { return }
-        await player.play(libraryItemId: item.id, episodeId: episodeId ?? self.episodeId, startTime: startTime, client: client)
-        if player.session != nil, player.errorMessage == nil {
+        await player.play(libraryItemId: libraryItemId, episodeId: episodeId ?? self.episodeId, startTime: startTime, client: client)
+        if player.isActive, player.errorMessage == nil {
             Router.shared.showNowPlaying()
         }
     }

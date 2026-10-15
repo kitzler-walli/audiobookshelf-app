@@ -1,5 +1,6 @@
 import AbsWatchCore
 import SwiftUI
+import UIKit
 
 enum Route: Hashable {
     case item(id: String, episodeId: String?)
@@ -8,7 +9,7 @@ enum Route: Hashable {
     case nowPlaying
     case chapters
     case settings
-    case debug
+    case downloads
     case log
 }
 
@@ -54,7 +55,9 @@ struct CoverImage: View {
 
     var body: some View {
         Group {
-            if let client = AppModel.shared.client {
+            if let image = localCover {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else if let client = AppModel.shared.client {
                 AsyncImage(url: client.coverURL(libraryItemId: libraryItemId, width: Int(size * 3))) { phase in
                     if let image = phase.image {
                         image.resizable().scaledToFill()
@@ -68,6 +71,13 @@ struct CoverImage: View {
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: size / 8))
+    }
+
+    /// Saved with a download, so covers show offline too.
+    private var localCover: UIImage? {
+        let manager = DownloadManager.shared
+        guard let item = manager.items.first(where: { $0.libraryItemId == libraryItemId }) else { return nil }
+        return UIImage(contentsOfFile: manager.store.coverURL(for: item.id).path)
     }
 
     private var placeholder: some View {
@@ -97,6 +107,46 @@ struct ItemRow: View {
                 }
             }
         }
+    }
+}
+
+/// A download in lists: progress while downloading, size when done.
+struct DownloadStatusText: View {
+    let item: DownloadedItem
+    private let manager = DownloadManager.shared
+
+    var body: some View {
+        let status = manager.status[item.id] ?? DownloadManager.Status()
+        Group {
+            if status.isComplete {
+                switch item.scope {
+                case .full: Label("Downloaded", systemImage: "arrow.down.circle.fill")
+                case .ahead(let seconds): Label("Next \(TimeText.duration(seconds)) downloaded", systemImage: "arrow.down.circle.fill")
+                }
+            } else if let error = status.error, !status.isActive {
+                Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red)
+            } else {
+                VStack(alignment: .leading, spacing: 1) {
+                    Label("\(Int(status.fraction * 100)) % of \(ByteCountFormatter.string(fromByteCount: status.plannedBytes, countStyle: .file))",
+                          systemImage: status.isActive ? "arrow.down.circle" : "pause.circle")
+                    if status.isActive {
+                        Text(Self.speedText(status)).monospacedDigit()
+                    }
+                }
+            }
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .lineLimit(2)
+    }
+
+    /// "1.2 MB/s · 8 min left"
+    static func speedText(_ status: DownloadManager.Status) -> String {
+        guard let speed = status.bytesPerSecond else { return "Starting…" }
+        guard speed >= 1024 else { return "Waiting for network…" }
+        let rate = ByteCountFormatter.string(fromByteCount: Int64(speed), countStyle: .file) + "/s"
+        guard let remaining = status.remainingSeconds else { return rate }
+        return "\(rate) · \(TimeText.duration(max(60, remaining))) left"
     }
 }
 

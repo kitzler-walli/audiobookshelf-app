@@ -84,7 +84,7 @@ public struct AbsClient: Sendable {
         var path = "api/items/\(libraryItemId)/play"
         if let episodeId { path += "/\(episodeId)" }
         let body = PlayRequest(
-            deviceInfo: .init(deviceId: deviceId, clientName: "Abs Watch", clientVersion: clientVersion, manufacturer: "Apple", model: model),
+            deviceInfo: deviceInfo(model: model),
             forceDirectPlay: true,
             forceTranscode: false,
             mediaPlayer: "AVPlayer",
@@ -108,6 +108,21 @@ public struct AbsClient: Sendable {
         }
     }
 
+    /// Creates or updates a session played from downloaded files (`POST /api/session/local`), which also updates
+    /// media progress unless the server's is newer.
+    public func syncLocalSession(_ session: LocalSession, model: String) async throws {
+        let body = LocalSessionBody(session: session, deviceInfo: deviceInfo(model: model))
+        let _: EmptyResponse? = try await sendAllowingEmpty("POST", "api/session/local", body: body)
+    }
+
+    /// Request for a byte range of a track file (`contentUrl` of an `AudioTrack`); needs the access token.
+    public func rangeRequest(contentUrl: String, range: Range<Int64>, token: String) -> URLRequest {
+        var request = URLRequest(url: serverAddress.appending(path: contentUrl))
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("bytes=\(range.lowerBound)-\(range.upperBound - 1)", forHTTPHeaderField: "Range")
+        return request
+    }
+
     /// Unauthenticated stream URL, valid while the server session is open.
     public func publicTrackURL(sessionId: String, trackIndex: Int) -> URL {
         serverAddress.appending(path: "public/session/\(sessionId)/track/\(trackIndex)")
@@ -115,14 +130,33 @@ public struct AbsClient: Sendable {
 
     // MARK: Plumbing
 
-    private struct PlayRequest: Encodable {
-        struct DeviceInfo: Encodable {
-            let deviceId: String
-            let clientName: String
-            let clientVersion: String
-            let manufacturer: String
-            let model: String
+    private struct DeviceInfo: Encodable {
+        let deviceId: String
+        let clientName: String
+        let clientVersion: String
+        let manufacturer: String
+        let model: String
+    }
+
+    private func deviceInfo(model: String) -> DeviceInfo {
+        DeviceInfo(deviceId: deviceId, clientName: "Abs Watch", clientVersion: clientVersion, manufacturer: "Apple", model: model)
+    }
+
+    /// The session's own fields plus `deviceInfo`, flat in one object.
+    private struct LocalSessionBody: Encodable {
+        let session: LocalSession
+        let deviceInfo: DeviceInfo
+
+        enum CodingKeys: String, CodingKey { case deviceInfo }
+
+        func encode(to encoder: Encoder) throws {
+            try session.encode(to: encoder)
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(deviceInfo, forKey: .deviceInfo)
         }
+    }
+
+    private struct PlayRequest: Encodable {
         let deviceInfo: DeviceInfo
         let forceDirectPlay: Bool
         let forceTranscode: Bool
