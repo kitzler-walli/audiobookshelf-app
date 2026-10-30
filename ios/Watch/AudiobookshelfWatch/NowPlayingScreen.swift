@@ -15,6 +15,7 @@ struct NowPlayingScreen: View {
 
 private struct PlayerControlsPage: View {
     private let player = PlayerController.shared
+    @State private var showingRate = false
 
     var body: some View {
         VStack(spacing: 6) {
@@ -52,7 +53,9 @@ private struct PlayerControlsPage: View {
 
             HStack {
                 Button { player.previousChapter() } label: { Image(systemName: "backward.end.fill") }
-                Button { player.cycleRate() } label: { Text(rateText).font(.footnote.monospacedDigit()) }
+                Button { showingRate = true } label: {
+                    Text(PlayerController.rateText(player.rate)).font(.footnote.monospacedDigit())
+                }
                 NavigationLink(value: Route.chapters) { Image(systemName: "list.bullet") }
                 Button { player.nextChapter() } label: { Image(systemName: "forward.end.fill") }
             }
@@ -75,6 +78,7 @@ private struct PlayerControlsPage: View {
                 Text("Nothing playing").foregroundStyle(.secondary)
             }
         }
+        .sheet(isPresented: $showingRate) { RatePicker() }
     }
 
     /// Position within the current chapter (or the whole book without chapters).
@@ -95,10 +99,42 @@ private struct PlayerControlsPage: View {
             .foregroundStyle(.secondary)
         }
     }
+}
 
-    private var rateText: String {
-        let rate = player.rate
-        return rate == rate.rounded() ? String(format: "%.0f×", rate) : String(format: "%.2g×", rate)
+/// Playback speed in 0.05 steps, adjusted with the Digital Crown or the -/+ buttons.
+private struct RatePicker: View {
+    private let player = PlayerController.shared
+    @State private var crownValue = Double(PlayerController.shared.rate)
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(PlayerController.rateText(player.rate))
+                .font(.system(size: 40, weight: .semibold).monospacedDigit())
+                .focusable()
+                .digitalCrownRotation(
+                    $crownValue,
+                    from: Double(PlayerController.rateRange.lowerBound),
+                    through: Double(PlayerController.rateRange.upperBound),
+                    by: Double(PlayerController.rateStep),
+                    sensitivity: .low,
+                    isContinuous: false,
+                    isHapticFeedbackEnabled: true
+                )
+            HStack {
+                Button { step(by: -PlayerController.rateStep) } label: { Image(systemName: "minus") }
+                Button("1×") { set(1.0) }
+                Button { step(by: PlayerController.rateStep) } label: { Image(systemName: "plus") }
+            }
+            .buttonStyle(.bordered)
+        }
+        .onChange(of: crownValue) { _, value in player.setRate(Float(value)) }
+    }
+
+    private func step(by delta: Float) { set(player.rate + delta) }
+
+    private func set(_ rate: Float) {
+        player.setRate(rate)
+        crownValue = Double(player.rate)
     }
 }
 

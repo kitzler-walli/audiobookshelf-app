@@ -14,7 +14,9 @@ import UIKit
 final class PlayerController {
     static let shared = PlayerController()
 
-    static let playbackRates: [Float] = [0.8, 1.0, 1.2, 1.5, 1.75, 2.0]
+    static let rateRange: ClosedRange<Float> = 0.5...3.0
+    static let rateStep: Float = 0.05
+    private static let rateKey = "playbackRate"
     /// After a longer pause another device may have moved on; check the server before resuming.
     private static let resumeCheckAfter: TimeInterval = 30
 
@@ -34,7 +36,11 @@ final class PlayerController {
     private(set) var bookTime: Double = 0
     private(set) var bufferedAhead: Double = 0
     private(set) var errorMessage: String?
-    private(set) var rate: Float = 1.0
+    /// Playback speed, remembered across launches
+    private(set) var rate: Float = {
+        let saved = UserDefaults.standard.float(forKey: PlayerController.rateKey)
+        return PlayerController.rateRange.contains(saved) ? saved : 1.0
+    }()
 
     var isActive: Bool { session != nil || downloadedItem != nil }
     var isLocal: Bool { downloadedItem != nil }
@@ -266,11 +272,23 @@ final class PlayerController {
         }
     }
 
-    func cycleRate() {
-        let index = Self.playbackRates.firstIndex(of: rate) ?? 1
-        rate = Self.playbackRates[(index + 1) % Self.playbackRates.count]
+    /// Snaps to the rate step and clamps to the supported range.
+    func setRate(_ newRate: Float) {
+        let snapped = (newRate / Self.rateStep).rounded() * Self.rateStep
+        let clamped = min(max(snapped, Self.rateRange.lowerBound), Self.rateRange.upperBound)
+        guard clamped != rate else { return }
+        rate = clamped
+        UserDefaults.standard.set(clamped, forKey: Self.rateKey)
         if isPlaying { player.rate = rate }
         updateNowPlaying()
+    }
+
+    /// "1×", "1.4×", "1.25×"
+    static func rateText(_ rate: Float) -> String {
+        var text = String(format: "%.2f", rate)
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return text + "×"
     }
 
     /// Final sync, closes the server session and releases the audio session.
