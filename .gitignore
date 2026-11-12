@@ -90,4 +90,4 @@ sw.*
 *.swp
 
 /resources/
-/android/app/release/
+/android/app/release//build/ota/
