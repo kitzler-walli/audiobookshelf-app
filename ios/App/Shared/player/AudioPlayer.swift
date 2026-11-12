@@ -485,8 +485,11 @@ class AudioPlayer: NSObject {
         DispatchQueue.runOnMainQueue {
             self.audioPlayer.pause()
         }
-        self.markAudioSessionAs(active: false)
-        
+        // Intentionally keep the audio session active while paused (like Apple Music/Podcasts).
+        // Deactivating it here makes iOS drop the app from the Lock Screen / Control Center
+        // Now Playing widget shortly after it gets suspended, so the user can't resume without unlocking.
+        // The session is still deactivated in destroy() (closePlayback) and when the queue ends.
+
         let sessionId = self.sessionId
         Task {
             if let currentTime = self.getCurrentTime() {
